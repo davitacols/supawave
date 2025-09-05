@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: supawave-backend
+    env: python
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "python manage.py migrate && python manage.py collectstatic --noinput && gunicorn inventory_saas.wsgi:application"
+    envVars:
+      - key: DEBUG
+        value: False
+      - key: DATABASE_URL
+        value: postgresql://david:7o3JR0Lm_NvMbnCn3sI6Dg@devconn-2409.jxf.gcp-us-west2.cockroachlabs.cloud:26257/supawave?sslmode=verify-full
+      - key: SECRET_KEY
+        generateValue: true
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: AWS_ACCESS_KEY_ID
+        value: AKIAUHPTTS4ANMYEME73
+      - key: AWS_SECRET_ACCESS_KEY
+        value: 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
+      - key: AWS_STORAGE_BUCKET_NAME
+        value: supawave-products
+      - key: PAYSTACK_SECRET_KEY
+        value: sk_test_9a70a63f5c3d1b7b12f6c3165b1e2206ca1810a4
+      - key: PAYSTACK_PUBLIC_KEY
+        value: pk_test_bd4b7f52afbcf7cf0fa68951c5b7c7dfafbf377d
+      - key: FRONTEND_URL
+        value: https://supawave.vercel.app

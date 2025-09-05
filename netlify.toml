@@ -1,0 +1,13 @@
+[build]
+  base = "frontend/"
+  publish = "frontend/build"
+  command = "npm run build"
+
+[build.environment]
+  REACT_APP_API_URL = "https://supawave-backend.onrender.com"
+  REACT_APP_PAYSTACK_PUBLIC_KEY = "pk_test_bd4b7f52afbcf7cf0fa68951c5b7c7dfafbf377d"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
