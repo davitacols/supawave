@@ -3,12 +3,12 @@ services:
     name: supawave-backend
     env: python
     buildCommand: "pip install -r requirements.txt"
-    startCommand: "python manage.py migrate && python manage.py collectstatic --noinput && gunicorn inventory_saas.wsgi:application"
+    startCommand: "python manage.py migrate && python manage.py collectstatic --noinput && gunicorn --bind 0.0.0.0:$PORT inventory_saas.wsgi:application"
     envVars:
       - key: DEBUG
         value: False
       - key: DATABASE_URL
-        value: postgresql://david:7o3JR0Lm_NvMbnCn3sI6Dg@devconn-2409.jxf.gcp-us-west2.cockroachlabs.cloud:26257/supawave?sslmode=verify-full
+        value: postgresql://david:7o3JR0Lm_NvMbnCn3sI6Dg@devconn-2409.jxf.gcp-us-west2.cockroachlabs.cloud:26257/supawave?sslmode=require
       - key: SECRET_KEY
         generateValue: true
       - key: JWT_SECRET_KEY
