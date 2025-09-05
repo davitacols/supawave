@@ -1,0 +1,15 @@
+version: 1.0
+runtime: python3
+build:
+  commands:
+    build:
+      - echo "Installing dependencies"
+      - pip install -r requirements.txt
+run:
+  runtime-version: 3.10.0
+  command: python manage.py migrate && python manage.py collectstatic --noinput && gunicorn --bind 0.0.0.0:8000 inventory_saas.wsgi:application
+  network:
+    port: 8000
+  env:
+    - name: DEBUG
+      value: "False"
