@@ -8,7 +8,7 @@ services:
       - key: DEBUG
         value: False
       - key: DATABASE_URL
-        value: postgresql://david:7o3JR0Lm_NvMbnCn3sI6Dg@devconn-2409.jxf.gcp-us-west2.cockroachlabs.cloud:26257/supawave?sslmode=require
+        value: postgresql://david:7o3JR0Lm_NvMbnCn3sI6Dg@devconn-2409.jxf.gcp-us-west2.cockroachlabs.cloud:26257/supawave?sslmode=disable
       - key: SECRET_KEY
         generateValue: true
       - key: JWT_SECRET_KEY
