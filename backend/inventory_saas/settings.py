@@ -80,7 +80,6 @@ CHANNEL_LAYERS = {
 }
 
 import dj_database_url
-from decouple import config
 
 # Database configuration
 DATABASE_URL = config('DATABASE_URL', default=None)
@@ -93,11 +92,11 @@ else:
     DATABASES = {
         'default': {
             'ENGINE': 'django_cockroachdb',
-            'NAME': os.getenv('DB_NAME', 'supawave'),
-            'USER': os.getenv('DB_USER', ''),
-            'PASSWORD': os.getenv('DB_PASSWORD', ''),
-            'HOST': os.getenv('DB_HOST', 'localhost'),
-            'PORT': os.getenv('DB_PORT', '26257'),
+            'NAME': config('DB_NAME', default='supawave'),
+            'USER': config('DB_USER', default=''),
+            'PASSWORD': config('DB_PASSWORD', default=''),
+            'HOST': config('DB_HOST', default='localhost'),
+            'PORT': config('DB_PORT', default='26257'),
             'OPTIONS': {
                 'sslmode': 'require',
             },
@@ -227,6 +226,7 @@ CORS_ALLOW_ALL_ORIGINS = DEBUG
 if not DEBUG:
     ALLOWED_HOSTS.extend([
         config('BACKEND_DOMAIN', default=''),
+        '.onrender.com',
         '.railway.app',
         '.vercel.app'
     ])

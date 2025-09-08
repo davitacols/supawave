@@ -1,103 +1,176 @@
 # SupaWave Deployment Guide
 
-## Free Deployment Options
+## Render Deployment
 
-### Option 1: Render (Backend) + Vercel (Frontend) - Recommended
+### 1. Create Render Account
+- Go to [render.com](https://render.com) and sign up
+- Connect your GitHub account
 
-#### Backend on Render (Free):
-1. Connect GitHub repo to Render
-2. Use `render.yaml` for automatic configuration
-3. Free PostgreSQL database included
-4. 750 hours/month free
+### 2. Use Your CockroachDB
+1. Get your CockroachDB connection string
+2. Format: `cockroachdb://username:password@host:port/database?sslmode=require`
+3. Copy the connection URL for environment variables
 
-### Option 2: PythonAnywhere (Backend) + Vercel (Frontend)
+### 3. Deploy Backend
+1. Click "New +" → "Web Service"
+2. Connect your GitHub repository
+3. Select `supawave` repository
+4. Configure:
+   - **Name**: `supawave-backend`
+   - **Root Directory**: `backend`
+   - **Environment**: `Python 3`
+   - **Build Command**: `pip install -r requirements.txt && python manage.py collectstatic --noinput`
+   - **Start Command**: `gunicorn inventory_saas.wsgi:application`
 
-#### Backend on PythonAnywhere (Free):
-1. Upload code via file manager
-2. Set up virtual environment
-3. Configure WSGI file
-4. Free MySQL database included
+### 4. Environment Variables
+Add these environment variables in Render dashboard:
 
-### Option 3: Heroku (Backend) + Vercel (Frontend)
+```
+SECRET_KEY=your-super-secret-key-here
+DEBUG=False
+DATABASE_URL=postgresql://user:password@host:port/database
+FRONTEND_URL=https://your-frontend-domain.com
+BACKEND_DOMAIN=your-backend-domain.onrender.com
 
-#### Backend on Heroku (Free tier ended, but eco dyno $7/month):
-1. Connect GitHub repo
-2. Add Heroku Postgres addon
-3. Set environment variables
-4. Deploy with Procfile
+# WhatsApp (Optional)
+WHATSAPP_TOKEN=your_whatsapp_token
+WHATSAPP_PHONE_ID=your_phone_id
+WHATSAPP_VERIFY_TOKEN=your_verify_token
 
-#### Frontend on Vercel:
-1. Connect GitHub repo to Vercel
-2. Set build command: `npm run build`
-3. Set environment variables:
-   - `REACT_APP_API_URL`: Your Railway backend URL
-   - `REACT_APP_PAYSTACK_PUBLIC_KEY`: Your Paystack public key
+# Paystack (Optional)
+PAYSTACK_SECRET_KEY=sk_test_your_secret_key
+PAYSTACK_PUBLIC_KEY=pk_test_your_public_key
 
-### Option 4: Docker Compose (VPS/Cloud)
+# AWS S3 (Optional)
+AWS_ACCESS_KEY_ID=your_access_key
+AWS_SECRET_ACCESS_KEY=your_secret_key
+AWS_STORAGE_BUCKET_NAME=your_bucket_name
+AWS_S3_REGION_NAME=us-east-1
 
-```bash
-# 1. Clone repository
-git clone <your-repo-url>
-cd supawave
-
-# 2. Copy production environment
-cp .env.production .env
-
-# 3. Update environment variables in .env
-
-# 4. Deploy with Docker
-docker-compose -f docker-compose.prod.yml up -d
+# Email (Optional)
+FROM_EMAIL=noreply@yourdomain.com
+EMAIL_PASSWORD=your_email_password
 ```
 
-### Option 3: Manual Deployment
+### 5. Deploy Frontend (Vercel/Netlify)
 
-#### Backend:
-```bash
-cd backend
-pip install -r requirements.txt
-python manage.py migrate
-python manage.py collectstatic
-gunicorn inventory_saas.wsgi:application
+#### Vercel Deployment:
+1. Go to [vercel.com](https://vercel.com)
+2. Import your GitHub repository
+3. Set root directory to `frontend`
+4. Add environment variable:
+   ```
+   REACT_APP_API_URL=https://your-backend-domain.onrender.com
+   ```
+5. Deploy
+
+#### Netlify Deployment:
+1. Go to [netlify.com](https://netlify.com)
+2. Connect GitHub repository
+3. Set build settings:
+   - **Base directory**: `frontend`
+   - **Build command**: `npm run build`
+   - **Publish directory**: `frontend/build`
+4. Add environment variable:
+   ```
+   REACT_APP_API_URL=https://your-backend-domain.onrender.com
+   ```
+5. Deploy
+
+### 6. Update CORS Settings
+After deployment, update your backend environment variables:
+```
+FRONTEND_URL=https://your-frontend-domain.vercel.app
 ```
 
-#### Frontend:
+### 7. Create Superuser
+1. Go to Render dashboard → your service → Shell
+2. Run: `python manage.py createsuperuser`
+3. Follow prompts to create admin user
+
+## Mobile App Deployment
+
+### Expo EAS Build
 ```bash
-cd frontend
-npm install
-npm run build
-# Serve build folder with nginx/apache
+cd mobile
+npm install -g @expo/cli
+npm install -g eas-cli
+
+# Login to Expo
+eas login
+
+# Configure build
+eas build:configure
+
+# Update app.json with your API URL
+# Edit app.json and set API_URL to your backend domain
+
+# Build for both platforms
+eas build --platform all
+
+# Submit to app stores (optional)
+eas submit --platform all
 ```
 
-## Environment Variables
+## Production Checklist
 
-### Required for Production:
-- `SECRET_KEY`: Django secret key
-- `DATABASE_URL`: CockroachDB connection string
-- `PAYSTACK_SECRET_KEY`: Live Paystack secret key
-- `PAYSTACK_PUBLIC_KEY`: Live Paystack public key
-- `AWS_ACCESS_KEY_ID`: AWS S3 access key
-- `AWS_SECRET_ACCESS_KEY`: AWS S3 secret key
-- `FRONTEND_URL`: Your frontend domain
+### Security
+- [ ] Set `DEBUG=False`
+- [ ] Use strong `SECRET_KEY`
+- [ ] Configure HTTPS
+- [ ] Set up proper CORS origins
+- [ ] Enable security headers
 
-## Post-Deployment Checklist
+### Database
+- [ ] PostgreSQL database created
+- [ ] Migrations applied
+- [ ] Superuser created
+- [ ] Database backups configured
 
-1. ✅ Update CORS settings for your domain
-2. ✅ Set up SSL certificates
-3. ✅ Configure custom domain
-4. ✅ Test payment integration
-5. ✅ Set up monitoring/logging
-6. ✅ Configure backups
+### Environment Variables
+- [ ] All required variables set
+- [ ] No sensitive data in code
+- [ ] Production API keys configured
 
-## Monitoring
+### Monitoring
+- [ ] Error tracking (Sentry)
+- [ ] Performance monitoring
+- [ ] Uptime monitoring
+- [ ] Log aggregation
 
-- Backend health: `https://your-api-domain.com/admin/`
-- Frontend: Check console for errors
-- Database: Monitor CockroachDB dashboard
+### Testing
+- [ ] API endpoints working
+- [ ] Frontend connecting to backend
+- [ ] Mobile app connecting to API
+- [ ] WhatsApp integration (if enabled)
+- [ ] Payment processing (if enabled)
 
-## Support
+## Troubleshooting
 
-For deployment issues, check:
-1. Environment variables are set correctly
-2. Database migrations ran successfully
-3. Static files are served properly
-4. CORS settings allow your frontend domain
+### Common Issues
+
+1. **Database Connection Error**
+   - Check DATABASE_URL format
+   - Ensure database is running
+   - Verify network connectivity
+
+2. **Static Files Not Loading**
+   - Run `python manage.py collectstatic`
+   - Check STATIC_ROOT and STATIC_URL settings
+   - Verify WhiteNoise configuration
+
+3. **CORS Errors**
+   - Add frontend domain to CORS_ALLOWED_ORIGINS
+   - Check FRONTEND_URL environment variable
+   - Verify protocol (http vs https)
+
+4. **Migration Errors**
+   - Run migrations manually: `python manage.py migrate`
+   - Check database permissions
+   - Verify database schema
+
+### Support
+- Check Render logs for backend issues
+- Use browser dev tools for frontend debugging
+- Check Expo logs for mobile app issues
+- Review Django logs for API problems
