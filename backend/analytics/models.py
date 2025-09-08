@@ -21,9 +21,9 @@ class PredictiveAlert(models.Model):
         ('profit_drop', 'Profit Margin Drop'),
     ]
     
-    business = models.ForeignKey(Business, on_delete=models.CASCADE)
+    business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name='analytics_alerts')
     alert_type = models.CharField(max_length=20, choices=ALERT_TYPES)
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, null=True, blank=True)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, null=True, blank=True, related_name='analytics_alerts')
     message = models.TextField()
     confidence = models.DecimalField(max_digits=5, decimal_places=2)
     created_at = models.DateTimeField(auto_now_add=True)

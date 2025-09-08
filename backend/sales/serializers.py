@@ -43,8 +43,10 @@ class SaleSerializer(serializers.ModelSerializer):
     
     def create(self, validated_data):
         items_data = validated_data.pop('items')
+        store = validated_data.pop('store', None)
         sale = Sale.objects.create(
             business=validated_data['business'],
+            store=store,
             total_amount=validated_data['total_amount']
         )
         

@@ -21,7 +21,6 @@ const POS = () => {
   const [showScanner, setShowScanner] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [cartCollapsed, setCartCollapsed] = useState(false);
   const [showReceipt, setShowReceipt] = useState(false);
   const [lastSale, setLastSale] = useState(null);
   const [business, setBusiness] = useState(null);
@@ -86,7 +85,6 @@ const POS = () => {
       
       const availableProducts = allProducts.filter(p => p.stock_quantity > 0);
       
-      // Client-side pagination
       const startIndex = (currentPage - 1) * productsPerPage;
       const endIndex = startIndex + productsPerPage;
       const paginatedProducts = availableProducts.slice(startIndex, endIndex);
@@ -144,14 +142,6 @@ const POS = () => {
     }
   };
 
-  const handleScanResult = (result) => {
-    if (result) {
-      setBarcode(result);
-      handleBarcodeSearch(result);
-      setShowScanner(false);
-    }
-  };
-
   const updateQuantity = (productId, newQuantity) => {
     if (newQuantity === 0) {
       setCart(cart.filter(item => item.product.id !== productId));
@@ -193,7 +183,6 @@ const POS = () => {
           }))
         };
       } else {
-        // Save sale offline for later sync
         offlineStorage.savePendingSale(saleData);
         
         saleWithItems = {
@@ -207,7 +196,6 @@ const POS = () => {
           }))
         };
         
-        // Update stock locally
         cart.forEach(item => {
           const newStock = item.product.stock_quantity - item.quantity;
           offlineStorage.updateProductStock(item.product.id, newStock);
@@ -229,7 +217,6 @@ const POS = () => {
     setCurrentPage(page);
   };
   
-  // Keyboard shortcuts - defined after functions
   const shortcuts = {
     'f1': () => products[0] && addToCart(products[0]),
     'f2': () => products[1] && addToCart(products[1]),
@@ -254,239 +241,112 @@ const POS = () => {
   
   useKeyboardShortcuts(shortcuts);
 
-  // Render mobile version for small screens
   if (isMobile) {
-    return (
-      <MobilePOS />
-    );
+    return <MobilePOS />;
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Modern Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-sky-500  flex items-center justify-center">
-                  <ShoppingCartIcon className="h-5 w-5 text-white" />
-                </div>
-                <h1 className="text-xl font-bold text-gray-900">Point of Sale</h1>
-              </div>
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200 px-6 py-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-medium text-gray-900">Point of Sale</h1>
+            <p className="text-sm text-gray-600 mt-1">Process sales and manage transactions</p>
+          </div>
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              <input
+                type="text"
+                placeholder="Scan barcode..."
+                className="px-3 py-2 border border-gray-300 rounded-md text-sm w-48"
+                value={barcode}
+                onChange={(e) => setBarcode(e.target.value)}
+                onKeyPress={handleBarcodeKeyPress}
+              />
+              <button
+                onClick={() => setShowScanner(true)}
+                className="px-3 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700"
+              >
+                Scan
+              </button>
             </div>
-            <div className="flex items-center space-x-4">
-              {/* Barcode Scanner */}
-              <div className="flex items-center space-x-2">
-                <div className="relative">
-                  <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-sky-500">
-                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h2M4 4h5m0 0v5m0 0h5m0 0V4" />
-                    </svg>
-                  </div>
-                  <input
-                    type="text"
-                    placeholder="Scan or enter barcode..."
-                    className="pl-10 pr-12 py-2 w-64 border border-gray-300 focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
-                    value={barcode}
-                    onChange={(e) => setBarcode(e.target.value)}
-                    onKeyPress={handleBarcodeKeyPress}
-                    autoFocus
-                  />
-                </div>
-                <button
-                  onClick={() => setShowScanner(true)}
-                  className="bg-sky-600 text-white px-3 py-2 hover:bg-sky-700 flex items-center space-x-2"
-                  title="Open Camera Scanner"
-                >
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                  <span className="hidden sm:inline">Scan</span>
-                </button>
-              </div>
-              
-              {/* Product Search */}
-              <div className="relative">
-                <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search products..."
-                  className="pl-10 pr-4 py-2 w-64 border border-gray-300 focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
-                  value={search}
-                  onChange={(e) => {
-                    setSearch(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                />
-              </div>
-              
-              <div className="flex items-center space-x-4">
-                <div className="bg-sky-50 px-3 py-2">
-                  <span className="text-sm font-medium text-sky-700">
-                    Cart: {cart.length} items
-                  </span>
-                </div>
-                <button
-                  onClick={() => setShowShortcutsHelp(true)}
-                  className="text-gray-500 hover:text-gray-700 text-sm"
-                  title="Keyboard Shortcuts (Press ?)"
-                >
-                  ⌨️ Shortcuts
-                </button>
-              </div>
+            <div className="relative">
+              <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search products..."
+                className="pl-9 pr-4 py-2 border border-gray-300 rounded-md text-sm w-64"
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setCurrentPage(1);
+                }}
+              />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className={`grid grid-cols-1 gap-6 transition-all duration-300 ${
-          cartCollapsed ? 'lg:grid-cols-1' : 'lg:grid-cols-4'
-        }`}>
-          {/* Products Section */}
-          <div className={cartCollapsed ? 'lg:col-span-1' : 'lg:col-span-3'}>
-            <div className="bg-white  shadow-sm border">
+      <div className="p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Products */}
+          <div className="lg:col-span-3">
+            <div className="bg-white border border-gray-200 rounded-lg">
               <div className="px-6 py-4 border-b border-gray-200">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-semibold text-gray-900">Available Products</h2>
-                  <span className="text-sm text-gray-500">
-                    {products.length} products available
-                  </span>
-                </div>
+                <h2 className="text-lg font-medium text-gray-900">Products</h2>
               </div>
               
               {productsLoading ? (
                 <div className="flex justify-center items-center h-96">
-                  <div className="animate-spin  h-12 w-12 border-b-2 border-sky-500"></div>
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                 </div>
               ) : (
                 <>
                   <div className="p-6">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                       {products.map((product, index) => (
                         <div
                           key={product.id}
-                          className="group relative bg-white border border-gray-200 hover:border-blue-300 hover:shadow-lg transition-all duration-200 overflow-hidden"
+                          className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 cursor-pointer"
+                          onClick={() => addToCart(product)}
                         >
-                          {/* Keyboard shortcut indicator */}
                           {index < 12 && (
-                            <div className="absolute top-2 left-2 z-10">
-                              <span className="bg-sky-500 text-white text-xs px-1.5 py-0.5 rounded font-mono">
-                                F{index + 1}
-                              </span>
-                            </div>
+                            <div className="text-xs text-blue-600 font-mono mb-2">F{index + 1}</div>
                           )}
-                          {/* Product Image/Icon */}
-                          <div className="aspect-square bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center group-hover:from-blue-100 group-hover:to-indigo-200 transition-colors">
+                          <div className="aspect-square bg-gray-100 rounded-lg mb-3 flex items-center justify-center">
                             {product.image ? (
-                              <img 
-                                src={product.image} 
-                                alt={product.name}
-                                className="w-full h-full object-cover"
-                              />
+                              <img src={product.image} alt={product.name} className="w-full h-full object-cover rounded-lg" />
                             ) : (
-                              <div className="text-4xl text-blue-400 group-hover:text-blue-500 transition-colors">
-                                📦
-                              </div>
+                              <div className="text-2xl">📦</div>
                             )}
-                            
-                            {/* Stock Badge */}
-                            <div className="absolute top-2 right-2">
-                              <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                                product.stock_quantity > 10 
-                                  ? 'bg-green-100 text-green-800'
-                                  : product.stock_quantity > 0
-                                  ? 'bg-yellow-100 text-yellow-800' 
-                                  : 'bg-red-100 text-red-800'
-                              }`}>
-                                {product.stock_quantity}
-                              </span>
-                            </div>
                           </div>
-                          
-                          {/* Product Info */}
-                          <div className="p-4">
-                            <h3 className="font-semibold text-sm text-gray-900 mb-2 line-clamp-2 min-h-[2.5rem]">
-                              {product.name}
-                            </h3>
-                            
-                            <div className="space-y-2">
-                              <div className="flex items-center justify-between">
-                                <span className="text-lg font-bold text-blue-600">
-                                  ₦{product.selling_price?.toLocaleString()}
-                                </span>
-                                {product.cost_price && (
-                                  <span className="text-xs text-gray-500 line-through">
-                                    ₦{product.cost_price?.toLocaleString()}
-                                  </span>
-                                )}
-                              </div>
-                              
-                              {product.sku && (
-                                <p className="text-xs text-gray-500 font-mono">
-                                  SKU: {product.sku}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                          
-                          {/* Add to Cart Button */}
-                          <button
-                            onClick={() => addToCart(product)}
-                            disabled={product.stock_quantity === 0}
-                            className="absolute inset-0 w-full h-full bg-black bg-opacity-0 hover:bg-opacity-10 transition-all duration-200 flex items-center justify-center opacity-0 group-hover:opacity-100 disabled:cursor-not-allowed"
-                          >
-                            <div className="bg-blue-600 text-white px-4 py-2 font-medium shadow-lg transform translate-y-2 group-hover:translate-y-0 transition-transform duration-200">
-                              {product.stock_quantity === 0 ? 'Out of Stock' : 'Add to Cart'}
-                            </div>
-                          </button>
+                          <h3 className="font-medium text-sm text-gray-900 mb-1 truncate">{product.name}</h3>
+                          <p className="text-lg font-semibold text-blue-600">₦{product.selling_price?.toLocaleString()}</p>
+                          <p className="text-xs text-gray-500">Stock: {product.stock_quantity}</p>
                         </div>
                       ))}
                     </div>
                   </div>
                   
-                  {/* Pagination */}
                   {totalPages > 1 && (
-                    <div className="px-6 py-4 border-t border-gray-200">
-                      <div className="flex items-center justify-between">
-                        <div className="text-sm text-gray-700">
-                          Page {currentPage} of {totalPages}
-                        </div>
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={() => handlePageChange(currentPage - 1)}
-                            disabled={currentPage === 1}
-                            className="px-3 py-2 border border-gray-300  disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-                          >
-                            <ChevronLeftIcon className="h-4 w-4" />
-                          </button>
-                          {[...Array(Math.min(5, totalPages))].map((_, i) => {
-                            const page = i + 1;
-                            return (
-                              <button
-                                key={page}
-                                onClick={() => handlePageChange(page)}
-                                className={`px-3 py-2 border  ${
-                                  currentPage === page
-                                    ? 'bg-sky-500 text-white border-sky-500'
-                                    : 'border-gray-300 hover:bg-gray-50'
-                                }`}
-                              >
-                                {page}
-                              </button>
-                            );
-                          })}
-                          <button
-                            onClick={() => handlePageChange(currentPage + 1)}
-                            disabled={currentPage === totalPages}
-                            className="px-3 py-2 border border-gray-300  disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-                          >
-                            <ChevronRightIcon className="h-4 w-4" />
-                          </button>
-                        </div>
+                    <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+                      <div className="text-sm text-gray-700">Page {currentPage} of {totalPages}</div>
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => handlePageChange(currentPage - 1)}
+                          disabled={currentPage === 1}
+                          className="px-3 py-2 border border-gray-300 rounded-md disabled:opacity-50"
+                        >
+                          <ChevronLeftIcon className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => handlePageChange(currentPage + 1)}
+                          disabled={currentPage === totalPages}
+                          className="px-3 py-2 border border-gray-300 rounded-md disabled:opacity-50"
+                        >
+                          <ChevronRightIcon className="h-4 w-4" />
+                        </button>
                       </div>
                     </div>
                   )}
@@ -495,13 +355,12 @@ const POS = () => {
             </div>
           </div>
 
-          {/* Cart Section */}
-          <div className="bg-white  shadow-sm border h-fit sticky top-6">
+          {/* Cart */}
+          <div className="bg-white border border-gray-200 rounded-lg h-fit">
             <div className="px-6 py-4 border-b border-gray-200">
-              <div className="flex items-center space-x-2">
-                <ShoppingCartIcon className="h-5 w-5 text-gray-600" />
-                <h2 className="text-lg font-semibold text-gray-900">Cart</h2>
-                <span className="bg-sky-100 text-sky-800 text-xs font-medium px-2 py-1 ">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-medium text-gray-900">Cart</h2>
+                <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded-full">
                   {cart.length}
                 </span>
               </div>
@@ -509,80 +368,62 @@ const POS = () => {
             
             <div className="p-6">
               {cart.length === 0 ? (
-                <div className="text-center py-12">
+                <div className="text-center py-8">
                   <ShoppingCartIcon className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-500">Your cart is empty</p>
-                  <p className="text-sm text-gray-400">Add products to get started</p>
+                  <p className="text-gray-500">Cart is empty</p>
                 </div>
               ) : (
                 <>
                   <div className="space-y-4 mb-6 max-h-96 overflow-y-auto">
                     {cart.map((item) => (
-                      <div key={item.product.id} className="bg-gray-50  p-4">
-                        <div className="flex justify-between items-start mb-3">
+                      <div key={item.product.id} className="border border-gray-200 rounded-lg p-3">
+                        <div className="flex justify-between items-start mb-2">
                           <div className="flex-1">
-                            <h4 className="font-medium text-sm text-gray-900 mb-1">
-                              {item.product.name}
-                            </h4>
-                            <p className="text-sky-600 font-semibold">
-                              ₦{item.unit_price?.toLocaleString()}
-                            </p>
+                            <h4 className="font-medium text-sm text-gray-900">{item.product.name}</h4>
+                            <p className="text-blue-600 font-semibold">₦{item.unit_price?.toLocaleString()}</p>
                           </div>
                           <button
                             onClick={() => updateQuantity(item.product.id, 0)}
-                            className="text-gray-400 hover:text-red-500 transition-colors"
+                            className="text-gray-400 hover:text-red-500"
                           >
                             <TrashIcon className="h-4 w-4" />
                           </button>
                         </div>
                         
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-3">
+                          <div className="flex items-center space-x-2">
                             <button
                               onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
-                              className="w-8 h-8 bg-white border border-gray-300  flex items-center justify-center hover:bg-gray-50"
+                              className="w-8 h-8 border border-gray-300 rounded flex items-center justify-center"
                             >
                               <MinusIcon className="h-4 w-4" />
                             </button>
-                            <span className="w-8 text-center font-medium">{item.quantity}</span>
+                            <span className="w-8 text-center">{item.quantity}</span>
                             <button
                               onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                              className="w-8 h-8 bg-white border border-gray-300  flex items-center justify-center hover:bg-gray-50"
+                              className="w-8 h-8 border border-gray-300 rounded flex items-center justify-center"
                             >
                               <PlusIcon className="h-4 w-4" />
                             </button>
                           </div>
-                          <div className="text-right">
-                            <p className="text-sm font-semibold text-gray-900">
-                              ₦{(item.quantity * item.unit_price).toLocaleString()}
-                            </p>
-                          </div>
+                          <p className="font-semibold">₦{(item.quantity * item.unit_price).toLocaleString()}</p>
                         </div>
                       </div>
                     ))}
                   </div>
 
-                  <div className="border-t border-gray-200 pt-4 space-y-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-lg font-semibold text-gray-900">Total:</span>
-                      <span className="text-2xl font-bold text-sky-600">
-                        ₦{getTotalAmount().toLocaleString()}
-                      </span>
+                  <div className="border-t border-gray-200 pt-4">
+                    <div className="flex justify-between items-center mb-4">
+                      <span className="text-lg font-semibold">Total:</span>
+                      <span className="text-2xl font-bold text-blue-600">₦{getTotalAmount().toLocaleString()}</span>
                     </div>
                     
                     <button
                       onClick={handleCheckout}
                       disabled={loading}
-                      className="w-full bg-sky-500 text-white py-3 px-4  hover:bg-sky-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
+                      className="w-full bg-blue-600 text-white py-3 rounded-md hover:bg-blue-700 disabled:opacity-50"
                     >
-                      {loading ? (
-                        <div className="animate-spin  h-5 w-5 border-b-2 border-white"></div>
-                      ) : (
-                        <>
-                          <CreditCardIcon className="h-5 w-5" />
-                          <span>Complete Sale</span>
-                        </>
-                      )}
+                      {loading ? 'Processing...' : 'Complete Sale'}
                     </button>
                   </div>
                 </>
@@ -591,7 +432,7 @@ const POS = () => {
           </div>
         </div>
       </div>
-      {/* Receipt Modal */}
+
       {showReceipt && (
         <Receipt
           sale={lastSale}
@@ -601,7 +442,6 @@ const POS = () => {
         />
       )}
       
-      {/* Barcode Scanner Modal */}
       {showScanner && (
         <BarcodeScanner
           onScan={(result) => {
@@ -614,7 +454,6 @@ const POS = () => {
         />
       )}
       
-      {/* Keyboard Shortcuts Help */}
       <KeyboardShortcutsHelp
         isOpen={showShortcutsHelp}
         onClose={() => setShowShortcutsHelp(false)}

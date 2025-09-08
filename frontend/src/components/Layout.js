@@ -4,11 +4,13 @@ import {
   HomeIcon, ArchiveBoxIcon, ShoppingCartIcon, ChartBarIcon, 
   DocumentTextIcon, UsersIcon, Cog6ToothIcon, ArrowRightOnRectangleIcon,
   Bars3Icon, BuildingStorefrontIcon, ChevronLeftIcon, ChevronRightIcon,
-  UserGroupIcon, XMarkIcon, ClipboardDocumentListIcon, CreditCardIcon, BanknotesIcon
+  UserGroupIcon, XMarkIcon, ClipboardDocumentListIcon, CreditCardIcon, BanknotesIcon,
+  ArrowsRightLeftIcon, ChatBubbleLeftRightIcon, ExclamationTriangleIcon, GlobeAltIcon
 } from '@heroicons/react/24/outline';
 import { authAPI } from '../utils/api';
 import NotificationBell from './NotificationBell';
 import Logo from './Logo';
+import ChatAssistant from './ChatAssistant';
 
 const Layout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -36,28 +38,65 @@ const Layout = ({ children }) => {
   };
 
   const getNavigation = () => {
-    const userRole = JSON.parse(localStorage.getItem('user') || '{}').role || 'cashier';
-    console.log('Current user role:', userRole);
+    const userRole = JSON.parse(localStorage.getItem('user') || '{}').role || 'staff';
     
-    const allNavigation = [
-      { name: 'Dashboard', href: '/', icon: HomeIcon, roles: ['owner', 'manager', 'cashier'] },
-      { name: 'Inventory', href: '/inventory', icon: ArchiveBoxIcon, roles: ['owner', 'manager', 'cashier'] },
-      { name: 'Stock Take', href: '/stock-take', icon: ClipboardDocumentListIcon, roles: ['owner', 'manager', 'cashier'] },
-      { name: 'POS', href: '/pos', icon: ShoppingCartIcon, roles: ['owner', 'manager', 'cashier'] },
-      { name: 'Credit', href: '/credit', icon: CreditCardIcon, roles: ['owner', 'manager'] },
-      { name: 'Reports', href: '/reports', icon: ChartBarIcon, roles: ['owner', 'manager'] },
-      { name: 'Invoices', href: '/invoices', icon: DocumentTextIcon, roles: ['owner', 'manager'] },
-      { name: 'Customers', href: '/customers', icon: UsersIcon, roles: ['owner', 'manager'] },
-      { name: 'Staff', href: '/staff', icon: UserGroupIcon, roles: ['owner', 'manager'] },
-      { name: 'Billing', href: '/billing', icon: BanknotesIcon, roles: ['owner'] },
-      { name: 'Store Profile', href: '/profile', icon: BuildingStorefrontIcon, roles: ['owner'] },
-      { name: 'Settings', href: '/settings', icon: Cog6ToothIcon, roles: ['owner'] },
+    const navigationGroups = [
+      {
+        title: 'Overview',
+        items: [
+          { name: 'Dashboard', href: '/', icon: HomeIcon, roles: ['owner', 'manager', 'staff'] },
+        ]
+      },
+      {
+        title: 'Sales & Operations',
+        items: [
+          { name: 'POS', href: '/pos', icon: ShoppingCartIcon, roles: ['owner', 'manager', 'staff'] },
+          { name: 'Credit', href: '/credit', icon: CreditCardIcon, roles: ['owner', 'manager'] },
+          { name: 'Invoices', href: '/invoices', icon: DocumentTextIcon, roles: ['owner', 'manager'] },
+        ]
+      },
+      {
+        title: 'Inventory',
+        items: [
+          { name: 'Inventory', href: '/inventory', icon: ArchiveBoxIcon, roles: ['owner', 'manager'] },
+          { name: 'Smart Reorder', href: '/smart-reorder', icon: ExclamationTriangleIcon, roles: ['owner', 'manager'] },
+          { name: 'Stock Take', href: '/stock-take', icon: ClipboardDocumentListIcon, roles: ['owner', 'manager'] },
+          { name: 'Transfers', href: '/transfers', icon: ArrowsRightLeftIcon, roles: ['owner'] },
+        ]
+      },
+      {
+        title: 'Analytics',
+        items: [
+          { name: 'Reports', href: '/reports', icon: ChartBarIcon, roles: ['owner', 'manager'] },
+        ]
+      },
+      {
+        title: 'Management',
+        items: [
+          { name: 'Customers', href: '/customers', icon: UsersIcon, roles: ['owner', 'manager'] },
+          { name: 'Staff', href: '/staff', icon: UserGroupIcon, roles: ['owner', 'manager'] },
+          { name: 'Stores', href: '/stores', icon: BuildingStorefrontIcon, roles: ['owner'] },
+          { name: 'Marketplace', href: '/marketplace', icon: GlobeAltIcon, roles: ['owner', 'manager'] },
+        ]
+      },
+      {
+        title: 'Settings',
+        items: [
+          { name: 'WhatsApp', href: '/whatsapp', icon: ChatBubbleLeftRightIcon, roles: ['owner', 'manager'] },
+          { name: 'Store Profile', href: '/profile', icon: BuildingStorefrontIcon, roles: ['owner'] },
+          { name: 'Billing', href: '/billing', icon: BanknotesIcon, roles: ['owner'] },
+          { name: 'Settings', href: '/settings', icon: Cog6ToothIcon, roles: ['owner'] },
+        ]
+      }
     ];
     
-    return allNavigation.filter(item => item.roles.includes(userRole));
+    return navigationGroups.map(group => ({
+      ...group,
+      items: group.items.filter(item => item.roles.includes(userRole))
+    })).filter(group => group.items.length > 0);
   };
   
-  const navigation = getNavigation();
+  // const navigation = getNavigation(); // Unused variable
 
   const handleLogout = () => {
     localStorage.removeItem('access_token');
@@ -68,12 +107,12 @@ const Layout = ({ children }) => {
 
   // Mobile navigation items (most important)
   const getMobileNavigation = () => {
-    const userRole = JSON.parse(localStorage.getItem('user') || '{}').role || 'cashier';
+    const userRole = JSON.parse(localStorage.getItem('user') || '{}').role || 'staff';
     const mobileNav = [
-      { name: 'Home', href: '/', icon: HomeIcon, roles: ['owner', 'manager', 'cashier'] },
-      { name: 'POS', href: '/pos', icon: ShoppingCartIcon, roles: ['owner', 'manager', 'cashier'] },
-      { name: 'Inventory', href: '/inventory', icon: ArchiveBoxIcon, roles: ['owner', 'manager', 'cashier'] },
-      { name: 'Logout', href: '#logout', icon: ArrowRightOnRectangleIcon, roles: ['owner', 'manager', 'cashier'] }
+      { name: 'Home', href: '/', icon: HomeIcon, roles: ['owner', 'manager', 'staff'] },
+      { name: 'POS', href: '/pos', icon: ShoppingCartIcon, roles: ['owner', 'manager', 'staff'] },
+      { name: 'Inventory', href: '/inventory', icon: ArchiveBoxIcon, roles: ['owner', 'manager'] },
+      { name: 'Logout', href: '#logout', icon: ArrowRightOnRectangleIcon, roles: ['owner', 'manager', 'staff'] }
     ];
     return mobileNav.filter(item => item.roles.includes(userRole));
   };
@@ -81,70 +120,77 @@ const Layout = ({ children }) => {
   return (
     <div className="min-h-screen bg-gray-50 pb-16 lg:pb-0">
       {/* Desktop Sidebar */}
-      <div className={`hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-50 lg:block transition-all duration-200 ${
-        sidebarCollapsed ? 'w-16' : 'w-64'
+      <div className={`hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-50 lg:block transition-all duration-300 ${
+        sidebarCollapsed ? 'w-16' : 'w-72'
       }`}>
-        <div className="flex flex-col h-full bg-white border-r border-gray-200 overflow-hidden">
+        <div className="flex flex-col h-full bg-white border-r border-gray-200 shadow-sm overflow-hidden">
           {/* Logo */}
-          <div className="flex items-center h-16 px-4 border-b border-gray-100">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center p-1">
-                <Logo size={24} className="text-white" />
-              </div>
-              {!sidebarCollapsed && <h1 className="text-lg font-semibold text-gray-900">SupaWave</h1>}
+          <div className={`flex items-center h-18 px-6 border-b border-gray-100 ${sidebarCollapsed ? 'justify-center' : 'justify-between'}`}>
+            <div className={`flex items-center ${sidebarCollapsed ? 'justify-center' : ''}`}>
+              <Logo size={sidebarCollapsed ? "small" : "large"} />
             </div>
-            
-            {/* Mobile close button */}
-            <button
-              onClick={() => setSidebarOpen(false)}
-              className="lg:hidden ml-auto p-1 text-gray-400 hover:text-gray-600"
-            >
-              <XMarkIcon className="h-5 w-5" />
-            </button>
-          </div>
-
-          {/* Navigation */}
-          <nav className="flex-1 px-3 py-4 overflow-y-auto">
-            {/* Collapse button */}
-            <div className="flex justify-end mb-4">
+            {!sidebarCollapsed && (
               <button
                 onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                className="hidden lg:block p-1 text-gray-400 hover:text-gray-600"
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all"
               >
-                {sidebarCollapsed ? (
-                  <ChevronRightIcon className="h-4 w-4" />
-                ) : (
-                  <ChevronLeftIcon className="h-4 w-4" />
-                )}
+                <ChevronLeftIcon className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+          
+          {/* Collapsed toggle button */}
+          {sidebarCollapsed && (
+            <div className="flex justify-center py-4">
+              <button
+                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all"
+              >
+                <ChevronRightIcon className="h-4 w-4" />
               </button>
             </div>
+          )}
+
+          {/* Navigation */}
+          <nav className="flex-1 px-4 py-6 overflow-y-auto">
             
-            <div className="space-y-1">
-              {getNavigation().map((item) => {
-                const isActive = location.pathname === item.href;
-                return (
-                  <Link
-                    key={item.name}
-                    to={item.href}
-                    className={`flex items-center px-3 py-2 text-sm font-medium rounded-md ${
-                      isActive
-                        ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-600'
-                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                    } ${sidebarCollapsed ? 'justify-center' : ''}`}
-                    onClick={() => setSidebarOpen(false)}
-                  >
-                    <item.icon className={`h-5 w-5 ${isActive ? 'text-blue-600' : 'text-gray-400'} ${
-                      sidebarCollapsed ? '' : 'mr-3'
-                    }`} />
-                    {!sidebarCollapsed && item.name}
-                  </Link>
-                );
-              })}
+            <div className="space-y-6">
+              {getNavigation().map((group) => (
+                <div key={group.title}>
+                  {!sidebarCollapsed && (
+                    <h3 className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                      {group.title}
+                    </h3>
+                  )}
+                  <div className="space-y-1">
+                    {group.items.map((item) => {
+                      const isActive = location.pathname === item.href;
+                      return (
+                        <Link
+                          key={item.name}
+                          to={item.href}
+                          className={`flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                            isActive
+                              ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-600'
+                              : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                          } ${sidebarCollapsed ? 'justify-center' : ''}`}
+                          onClick={() => setSidebarOpen(false)}
+                        >
+                          <item.icon className={`h-5 w-5 ${isActive ? 'text-blue-600' : 'text-gray-400'} ${
+                            sidebarCollapsed ? '' : 'mr-3'
+                          }`} />
+                          {!sidebarCollapsed && item.name}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
             </div>
           </nav>
 
           {/* User Profile */}
-          <div className="p-3 border-t border-gray-100">
+          <div className="p-4 border-t border-gray-100">
             <div className={`flex items-center p-2 rounded-md hover:bg-gray-50 ${
               sidebarCollapsed ? 'justify-center' : 'space-x-3'
             }`}>
@@ -153,8 +199,18 @@ const Layout = ({ children }) => {
               </div>
               {!sidebarCollapsed && (
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">{business?.name || 'Store Name'}</p>
-                  <p className="text-xs text-gray-500">Premium</p>
+                  <p className="text-sm font-semibold text-gray-900 truncate">{business?.name || 'Store Name'}</p>
+                  <div className="flex items-center mt-1">
+                    <span className={`text-xs px-2 py-0.5 rounded ${
+                      business?.subscription_status === 'active' ? 'bg-green-100 text-green-700' :
+                      business?.subscription_status === 'trial' ? 'bg-blue-100 text-blue-700' :
+                      'bg-red-100 text-red-700'
+                    }`}>
+                      {business?.subscription_status === 'active' ? '✓ Premium' :
+                       business?.subscription_status === 'trial' ? '🎁 Trial' :
+                       '⚠️ Expired'}
+                    </span>
+                  </div>
                 </div>
               )}
             </div>
@@ -173,35 +229,45 @@ const Layout = ({ children }) => {
       </div>
 
       {/* Main Content */}
-      <div className={`transition-all duration-200 ${sidebarCollapsed ? 'lg:pl-16' : 'lg:pl-64'}`}>
+      <div className={`transition-all duration-300 ${sidebarCollapsed ? 'lg:pl-16' : 'lg:pl-72'}`}>
         {/* Top Bar */}
-        <div className="sticky top-0 z-40 flex h-16 items-center gap-x-4 bg-white border-b border-gray-200 px-4 sm:px-6 lg:px-8">
+        <div className="sticky top-0 z-40 flex h-18 items-center gap-x-4 bg-white/80 backdrop-blur-md border-b border-gray-100 px-4 sm:px-6 lg:px-8 shadow-soft">
           <button
             type="button"
-            className="lg:hidden p-2 text-gray-500 hover:text-gray-700"
+            className="lg:hidden p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-all"
             onClick={() => setSidebarOpen(true)}
           >
             <Bars3Icon className="h-6 w-6" />
           </button>
 
           <div className="flex flex-1 items-center justify-between">
-            <h1 className="text-xl font-semibold text-gray-900">
-              {getNavigation().find(item => item.href === location.pathname)?.name || 'Dashboard'}
-            </h1>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">
+                {getNavigation().flatMap(group => group.items).find(item => item.href === location.pathname)?.name || 'Dashboard'}
+              </h1>
+              <p className="text-sm text-gray-500 mt-0.5">
+                {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+              </p>
+            </div>
             
-            <NotificationBell />
+            <div className="flex items-center space-x-4">
+              <NotificationBell />
+            </div>
           </div>
         </div>
 
         {/* Page Content */}
-        <main className="p-3 sm:p-6">
+        <main className="p-6">
           {children}
         </main>
       </div>
 
+      {/* Chat Assistant */}
+      <ChatAssistant />
+
       {/* Mobile Bottom Navigation */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 safe-area-pb">
-        <div className="grid grid-cols-4 h-16">
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-t border-gray-100 shadow-strong safe-area-pb">
+        <div className="grid grid-cols-4 h-18 px-2">
           {getMobileNavigation().map((item) => {
             const isActive = location.pathname === item.href;
             return (
@@ -214,12 +280,14 @@ const Layout = ({ children }) => {
                     handleLogout();
                   }
                 }}
-                className={`flex flex-col items-center justify-center space-y-1 p-2 transition-colors ${
-                  isActive ? 'text-sky-600 bg-sky-50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                className={`flex flex-col items-center justify-center space-y-1.5 p-3 rounded-2xl mx-1 my-2 transition-all ${
+                  isActive 
+                    ? 'text-primary-600 bg-primary-50 shadow-soft' 
+                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
                 }`}
               >
                 <item.icon className="h-5 w-5" />
-                <span className="text-xs font-medium truncate">{item.name}</span>
+                <span className="text-2xs font-medium truncate">{item.name}</span>
               </Link>
             );
           })}
@@ -233,11 +301,8 @@ const Layout = ({ children }) => {
           <div className="fixed inset-y-0 left-0 w-72 sm:w-80 bg-white border-r border-gray-200 transform translate-x-0 transition-transform duration-200 shadow-xl">
             {/* Mobile Sidebar Header */}
             <div className="h-16 px-4 border-b border-gray-100 bg-sky-50 flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-sky-600 rounded-lg flex items-center justify-center p-1">
-                  <Logo size={24} className="text-white" />
-                </div>
-                <h1 className="text-lg font-semibold text-gray-900">SupaWave</h1>
+              <div className="flex items-center">
+                <Logo size="small" />
               </div>
               <button
                 onClick={() => setSidebarOpen(false)}
@@ -249,25 +314,34 @@ const Layout = ({ children }) => {
 
             {/* Mobile Navigation */}
             <nav className="px-4 py-4 overflow-y-auto" style={{ height: 'calc(100vh - 200px)' }}>
-              <div className="space-y-2">
-                {getNavigation().map((item) => {
-                  const isActive = location.pathname === item.href;
-                  return (
-                    <Link
-                      key={item.name}
-                      to={item.href}
-                      className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
-                        isActive
-                          ? 'bg-sky-50 text-sky-700 border-l-4 border-sky-600'
-                          : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                      }`}
-                      onClick={() => setSidebarOpen(false)}
-                    >
-                      <item.icon className={`h-5 w-5 mr-3 ${isActive ? 'text-sky-600' : 'text-gray-400'}`} />
-                      {item.name}
-                    </Link>
-                  );
-                })}
+              <div className="space-y-6">
+                {getNavigation().map((group) => (
+                  <div key={group.title}>
+                    <h3 className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                      {group.title}
+                    </h3>
+                    <div className="space-y-1">
+                      {group.items.map((item) => {
+                        const isActive = location.pathname === item.href;
+                        return (
+                          <Link
+                            key={item.name}
+                            to={item.href}
+                            className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
+                              isActive
+                                ? 'bg-sky-50 text-sky-700 border-l-4 border-sky-600'
+                                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                            }`}
+                            onClick={() => setSidebarOpen(false)}
+                          >
+                            <item.icon className={`h-5 w-5 mr-3 ${isActive ? 'text-sky-600' : 'text-gray-400'}`} />
+                            {item.name}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
               </div>
             </nav>
 
@@ -279,7 +353,20 @@ const Layout = ({ children }) => {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-900 truncate">{business?.name || 'Store Name'}</p>
-                  <p className="text-xs text-gray-500">Premium Plan</p>
+                  <div className="flex items-center space-x-2">
+                    <span className={`text-xs px-2 py-0.5 rounded ${
+                      business?.subscription_status === 'active' ? 'bg-green-100 text-green-700' :
+                      business?.subscription_status === 'trial' ? 'bg-blue-100 text-blue-700' :
+                      'bg-red-100 text-red-700'
+                    }`}>
+                      {business?.subscription_status === 'active' ? '✓ Premium' :
+                       business?.subscription_status === 'trial' ? '🎁 Trial' :
+                       '⚠️ Expired'}
+                    </span>
+                    {business?.trial_days_left && business?.subscription_status === 'trial' && (
+                      <span className="text-xs text-gray-500">{business.trial_days_left}d left</span>
+                    )}
+                  </div>
                 </div>
               </div>
               

@@ -54,10 +54,37 @@ class StaffSerializer(serializers.ModelSerializer):
 
 class BusinessSerializer(serializers.ModelSerializer):
     logo = serializers.ImageField(required=False)
+    subscription_status = serializers.SerializerMethodField()
+    trial_days_left = serializers.SerializerMethodField()
     
     class Meta:
         model = Business
-        fields = ['id', 'name', 'address', 'phone', 'email', 'registration_date', 'is_active', 'logo', 'primary_color', 'secondary_color']
+        fields = ['id', 'name', 'address', 'phone', 'email', 'registration_date', 'is_active', 'logo', 'primary_color', 'secondary_color', 'subscription_status', 'trial_days_left']
+    
+    def get_subscription_status(self, obj):
+        from datetime import datetime
+        if hasattr(obj, 'trial_end_date') and obj.trial_end_date:
+            if hasattr(obj.trial_end_date, 'date'):
+                trial_date = obj.trial_end_date.date()
+            else:
+                trial_date = obj.trial_end_date
+            
+            if trial_date >= datetime.now().date():
+                return 'trial'
+            else:
+                return 'expired'
+        return 'active'
+    
+    def get_trial_days_left(self, obj):
+        from datetime import datetime
+        if hasattr(obj, 'trial_end_date') and obj.trial_end_date:
+            if hasattr(obj.trial_end_date, 'date'):
+                trial_date = obj.trial_end_date.date()
+            else:
+                trial_date = obj.trial_end_date
+            days_left = (trial_date - datetime.now().date()).days
+            return max(0, days_left)
+        return None
         
     def to_representation(self, instance):
         data = super().to_representation(instance)
@@ -87,10 +114,20 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         business = Business.objects.create(
             name=business_name,
             owner=user,
-            trial_end_date=datetime.now() + timedelta(days=14)
+            trial_end_date=datetime.now().date() + timedelta(days=14)
         )
         user.business = business
         user.save()
+        
+        # Create main store (head office) automatically
+        from stores.models import Store
+        Store.objects.create(
+            business=business,
+            name=f"{business_name} - Head Office",
+            address="Main office location",
+            is_main_store=True,
+            is_active=True
+        )
         
         return user
 

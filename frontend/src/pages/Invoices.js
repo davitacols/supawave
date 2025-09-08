@@ -8,6 +8,12 @@ import {
 import { invoiceAPI, authAPI, inventoryAPI } from '../utils/api';
 import CustomerModal from '../components/CustomerModal';
 import InvoicePreview from '../components/InvoicePreview';
+import { Card } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
+import { Input } from '../components/ui/Input';
+import { Badge } from '../components/ui/Badge';
+import { Table } from '../components/ui/Table';
+import { Modal } from '../components/ui/Modal';
 
 const Invoices = () => {
   const [invoices, setInvoices] = useState([]);
@@ -188,82 +194,76 @@ const Invoices = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-white p-4 sm:p-6 shadow rounded-lg">
+      <Card>
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start space-y-4 sm:space-y-0">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Invoice Management</h1>
+            <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">Invoice Management</h1>
             <p className="text-gray-600 mt-1 text-sm sm:text-base">Create and manage customer invoices</p>
           </div>
-          <button
-            onClick={() => setShowModal(true)}
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 flex items-center justify-center space-x-2 text-sm sm:text-base"
-          >
-            <PlusIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+          <Button onClick={() => setShowModal(true)} className="flex items-center space-x-2">
+            <PlusIcon className="h-4 w-4" />
             <span>Create Invoice</span>
-          </button>
+          </Button>
         </div>
-      </div>
+      </Card>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-6">
-        <div className="bg-white p-3 sm:p-6 shadow rounded-lg">
-          <div className="flex items-center">
-            <DocumentTextIcon className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600" />
-            <div className="ml-2 sm:ml-4">
-              <p className="text-xs sm:text-sm text-gray-500">Total Invoices</p>
-              <p className="text-lg sm:text-2xl font-bold">{invoices.length}</p>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <Card className="p-4">
+          <div className="flex items-center space-x-3">
+            <DocumentTextIcon className="h-8 w-8 text-gray-600" />
+            <div>
+              <p className="text-sm text-gray-600">Total Invoices</p>
+              <p className="text-2xl font-semibold text-gray-900">{invoices.length}</p>
             </div>
           </div>
-        </div>
+        </Card>
         
-        <div className="bg-white p-6 shadow">
-          <div className="flex items-center">
+        <Card className="p-4">
+          <div className="flex items-center space-x-3">
             <CheckCircleIcon className="h-8 w-8 text-green-600" />
-            <div className="ml-4">
-              <p className="text-sm text-gray-500">Paid</p>
-              <p className="text-2xl font-bold">{invoices.filter(i => i.status === 'paid').length}</p>
+            <div>
+              <p className="text-sm text-gray-600">Paid</p>
+              <p className="text-2xl font-semibold text-gray-900">{invoices.filter(i => i.status === 'paid').length}</p>
             </div>
           </div>
-        </div>
+        </Card>
         
-        <div className="bg-white p-6 shadow">
-          <div className="flex items-center">
+        <Card className="p-4">
+          <div className="flex items-center space-x-3">
             <ClockIcon className="h-8 w-8 text-blue-600" />
-            <div className="ml-4">
-              <p className="text-sm text-gray-500">Pending</p>
-              <p className="text-2xl font-bold">{invoices.filter(i => i.status === 'sent').length}</p>
+            <div>
+              <p className="text-sm text-gray-600">Pending</p>
+              <p className="text-2xl font-semibold text-gray-900">{invoices.filter(i => i.status === 'sent').length}</p>
             </div>
           </div>
-        </div>
+        </Card>
         
-        <div className="bg-white p-6 shadow">
-          <div className="flex items-center">
+        <Card className="p-4">
+          <div className="flex items-center space-x-3">
             <ExclamationTriangleIcon className="h-8 w-8 text-red-600" />
-            <div className="ml-4">
-              <p className="text-sm text-gray-500">Overdue</p>
-              <p className="text-2xl font-bold">{invoices.filter(i => i.status === 'overdue').length}</p>
+            <div>
+              <p className="text-sm text-gray-600">Overdue</p>
+              <p className="text-2xl font-semibold text-gray-900">{invoices.filter(i => i.status === 'overdue').length}</p>
             </div>
           </div>
-        </div>
+        </Card>
       </div>
 
-      {/* Filters */}
-      <div className="bg-white p-6 shadow">
+      {/* Search and Filters */}
+      <div className="bg-white p-4 shadow rounded-lg">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="relative">
-            <MagnifyingGlassIcon className="h-5 w-5 absolute left-3 top-3 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search invoices..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300"
-            />
-          </div>
+          <input
+            type="text"
+            placeholder="Search invoices..."
+            className="w-full pl-4 pr-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="w-full border border-gray-300 px-3 py-2"
+            className="w-full border border-gray-300 px-3 py-2 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white"
           >
             <option value="all">All Status</option>
             <option value="draft">Draft</option>
@@ -275,9 +275,9 @@ const Invoices = () => {
       </div>
 
       {/* Invoices List */}
-      <div className="bg-white shadow">
+      <Card>
         <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-medium">Invoices ({getFilteredInvoices().length})</h2>
+          <h2 className="text-lg font-medium text-gray-900">Invoices ({getFilteredInvoices().length})</h2>
         </div>
         
         {getFilteredInvoices().length === 0 ? (
@@ -288,85 +288,69 @@ const Invoices = () => {
               {searchTerm || statusFilter !== 'all' ? 'No invoices match your criteria' : 'Create your first invoice to get started'}
             </p>
             {!searchTerm && statusFilter === 'all' && (
-              <button
-                onClick={() => setShowModal(true)}
-                className="bg-blue-600 text-white px-6 py-2 hover:bg-blue-700"
-              >
+              <Button onClick={() => setShowModal(true)}>
                 Create First Invoice
-              </button>
+              </Button>
             )}
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Invoice #</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Due Date</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+          <Table>
+            <thead>
+              <tr>
+                <th>Invoice #</th>
+                <th>Customer</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th>Due Date</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {getFilteredInvoices().map((invoice) => (
+                <tr key={invoice.id}>
+                  <td className="font-medium">{invoice.invoice_number}</td>
+                  <td>{invoice.customer_name}</td>
+                  <td>₦{invoice.total_amount?.toLocaleString()}</td>
+                  <td>
+                    <Badge variant={invoice.status === 'paid' ? 'success' : invoice.status === 'overdue' ? 'error' : 'default'}>
+                      {invoice.status?.toUpperCase()}
+                    </Badge>
+                  </td>
+                  <td>{new Date(invoice.due_date).toLocaleDateString()}</td>
+                  <td>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => {
+                          setSelectedInvoice(invoice);
+                          setShowPreview(true);
+                        }}
+                        className="p-2 text-gray-400 hover:text-blue-600"
+                        title="View Invoice"
+                      >
+                        <EyeIcon className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => editInvoice(invoice)}
+                        className="p-2 text-gray-400 hover:text-blue-600"
+                        title="Edit Invoice"
+                      >
+                        <PencilIcon className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => deleteInvoice(invoice.id)}
+                        className="p-2 text-gray-400 hover:text-red-600"
+                        title="Delete Invoice"
+                      >
+                        <TrashIcon className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {getFilteredInvoices().map((invoice) => (
-                  <tr key={invoice.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {invoice.invoice_number}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {invoice.customer_name}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      ₦{invoice.total_amount?.toLocaleString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center space-x-2">
-                        {getStatusIcon(invoice.status)}
-                        <span className={`px-2 py-1 text-xs font-semibold ${getStatusColor(invoice.status)}`}>
-                          {invoice.status?.toUpperCase()}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {new Date(invoice.due_date).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => {
-                            setSelectedInvoice(invoice);
-                            setShowPreview(true);
-                          }}
-                          className="p-2 text-gray-400 hover:text-blue-600"
-                          title="View Invoice"
-                        >
-                          <EyeIcon className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => editInvoice(invoice)}
-                          className="p-2 text-gray-400 hover:text-blue-600"
-                          title="Edit Invoice"
-                        >
-                          <PencilIcon className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => deleteInvoice(invoice.id)}
-                          className="p-2 text-gray-400 hover:text-red-600"
-                          title="Delete Invoice"
-                        >
-                          <TrashIcon className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              ))}
+            </tbody>
+          </Table>
         )}
-      </div>
+      </Card>
 
       {/* Create/Edit Invoice Modal */}
       {showModal && (

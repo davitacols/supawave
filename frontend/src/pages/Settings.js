@@ -5,6 +5,8 @@ import {
   DevicePhoneMobileIcon, EnvelopeIcon, PrinterIcon
 } from '@heroicons/react/24/outline';
 import { authAPI } from '../utils/api';
+import { Card } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
 
 const Settings = () => {
   const [activeTab, setActiveTab] = useState('general');
@@ -40,7 +42,6 @@ const Settings = () => {
   const updateSettings = async (category) => {
     setLoading(true);
     try {
-      // This would call the appropriate API endpoint
       console.log('Updating settings:', category, settings[category]);
       alert('Settings updated successfully!');
     } catch (error) {
@@ -62,7 +63,6 @@ const Settings = () => {
   
   const exportData = async () => {
     try {
-      // This would call the export API
       alert('Data export started. You will receive an email when ready.');
     } catch (error) {
       alert('Error exporting data');
@@ -72,7 +72,6 @@ const Settings = () => {
   const deleteAllData = async () => {
     if (window.confirm('Are you sure? This will permanently delete all your data and cannot be undone.')) {
       try {
-        // This would call the delete API
         alert('Data deletion initiated.');
       } catch (error) {
         alert('Error deleting data');
@@ -90,12 +89,14 @@ const Settings = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-      </div>
+      <Card>
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-semibold text-gray-900">Settings</h1>
+        </div>
+      </Card>
 
       {/* Tabs */}
-      <div className="bg-white shadow">
+      <Card>
         <div className="border-b border-gray-200">
           <nav className="flex space-x-8 px-6">
             {tabs.map((tab) => (
@@ -114,11 +115,11 @@ const Settings = () => {
             ))}
           </nav>
         </div>
-      </div>
+      </Card>
 
       {/* General Settings */}
       {activeTab === 'general' && (
-        <div className="bg-white shadow border border-gray-200 p-6">
+        <Card className="p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-6">General Settings</h3>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -127,7 +128,7 @@ const Settings = () => {
               <select 
                 value={settings.system.currency}
                 onChange={(e) => handleSettingChange('system', 'currency', e.target.value)}
-                className="w-full border border-gray-300 px-3 py-2"
+                className="w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="NGN">Nigerian Naira (₦)</option>
                 <option value="USD">US Dollar ($)</option>
@@ -141,7 +142,7 @@ const Settings = () => {
               <select 
                 value={settings.system.timezone}
                 onChange={(e) => handleSettingChange('system', 'timezone', e.target.value)}
-                className="w-full border border-gray-300 px-3 py-2"
+                className="w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="Africa/Lagos">West Africa Time (WAT)</option>
                 <option value="Africa/Accra">Ghana Mean Time (GMT)</option>
@@ -154,7 +155,7 @@ const Settings = () => {
               <select 
                 value={settings.system.date_format}
                 onChange={(e) => handleSettingChange('system', 'date_format', e.target.value)}
-                className="w-full border border-gray-300 px-3 py-2"
+                className="w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="DD/MM/YYYY">DD/MM/YYYY</option>
                 <option value="MM/DD/YYYY">MM/DD/YYYY</option>
@@ -168,7 +169,7 @@ const Settings = () => {
                 type="number"
                 value={settings.system.low_stock_threshold}
                 onChange={(e) => handleSettingChange('system', 'low_stock_threshold', parseInt(e.target.value))}
-                className="w-full border border-gray-300 px-3 py-2"
+                className="w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 min="1"
               />
             </div>
@@ -187,19 +188,16 @@ const Settings = () => {
           </div>
           
           <div className="mt-6 pt-6 border-t border-gray-200">
-            <button 
-              onClick={() => updateSettings('system')}
-              className="bg-blue-600 text-white px-6 py-2 hover:bg-blue-700"
-            >
+            <Button onClick={() => updateSettings('system')}>
               Save General Settings
-            </button>
+            </Button>
           </div>
-        </div>
+        </Card>
       )}
 
       {/* Notifications */}
       {activeTab === 'notifications' && (
-        <div className="bg-white shadow border border-gray-200 p-6">
+        <Card className="p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-6">Notification Preferences</h3>
           
           <div className="space-y-6">
@@ -246,19 +244,16 @@ const Settings = () => {
           </div>
           
           <div className="mt-6 pt-6 border-t border-gray-200">
-            <button 
-              onClick={() => updateSettings('notifications')}
-              className="bg-blue-600 text-white px-6 py-2 hover:bg-blue-700"
-            >
+            <Button onClick={() => updateSettings('notifications')}>
               Save Notification Settings
-            </button>
+            </Button>
           </div>
-        </div>
+        </Card>
       )}
 
       {/* Security */}
       {activeTab === 'security' && (
-        <div className="bg-white shadow border border-gray-200 p-6">
+        <Card className="p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-6">Security Settings</h3>
           
           <div className="space-y-6">
@@ -282,7 +277,7 @@ const Settings = () => {
                   type="number"
                   value={settings.security.session_timeout}
                   onChange={(e) => handleSettingChange('security', 'session_timeout', parseInt(e.target.value))}
-                  className="w-full border border-gray-300 px-3 py-2"
+                  className="w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   min="5"
                   max="480"
                 />
@@ -294,7 +289,7 @@ const Settings = () => {
                   type="number"
                   value={settings.security.password_expiry}
                   onChange={(e) => handleSettingChange('security', 'password_expiry', parseInt(e.target.value))}
-                  className="w-full border border-gray-300 px-3 py-2"
+                  className="w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   min="30"
                   max="365"
                 />
@@ -310,23 +305,20 @@ const Settings = () => {
           </div>
           
           <div className="mt-6 pt-6 border-t border-gray-200">
-            <button 
-              onClick={() => updateSettings('security')}
-              className="bg-blue-600 text-white px-6 py-2 hover:bg-blue-700"
-            >
+            <Button onClick={() => updateSettings('security')}>
               Save Security Settings
-            </button>
+            </Button>
           </div>
-        </div>
+        </Card>
       )}
 
       {/* Billing */}
       {activeTab === 'billing' && (
         <div className="space-y-6">
-          <div className="bg-white shadow border border-gray-200 p-6">
+          <Card className="p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-6">Subscription & Billing</h3>
             
-            <div className="bg-green-50 border border-green-200 p-4 mb-6">
+            <div className="bg-green-50 border border-green-200 p-4 rounded-md mb-6">
               <div className="flex items-center justify-between">
                 <div>
                   <h4 className="font-medium text-green-900">Premium Plan</h4>
@@ -342,7 +334,7 @@ const Settings = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <h4 className="font-medium text-gray-900 mb-3">Payment Method</h4>
-                <div className="border border-gray-200 p-4">
+                <div className="border border-gray-200 p-4 rounded-md">
                   <p className="text-sm text-gray-600">**** **** **** 1234</p>
                   <p className="text-xs text-gray-500">Expires 12/25</p>
                 </div>
@@ -366,9 +358,9 @@ const Settings = () => {
                 </div>
               </div>
             </div>
-          </div>
+          </Card>
           
-          <div className="bg-white shadow border border-gray-200 p-6">
+          <Card className="p-6">
             <h4 className="font-medium text-gray-900 mb-4">Receipt Settings</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
@@ -377,7 +369,7 @@ const Settings = () => {
                   type="text"
                   value={settings.receipt.footer_text}
                   onChange={(e) => handleSettingChange('receipt', 'footer_text', e.target.value)}
-                  className="w-full border border-gray-300 px-3 py-2"
+                  className="w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Thank you message"
                 />
               </div>
@@ -387,7 +379,7 @@ const Settings = () => {
                 <select 
                   value={settings.receipt.paper_size}
                   onChange={(e) => handleSettingChange('receipt', 'paper_size', e.target.value)}
-                  className="w-full border border-gray-300 px-3 py-2"
+                  className="w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="A4">A4</option>
                   <option value="80mm">80mm Thermal</option>
@@ -419,48 +411,39 @@ const Settings = () => {
             </div>
             
             <div className="mt-6 pt-6 border-t border-gray-200">
-              <button 
-                onClick={() => updateSettings('receipt')}
-                className="bg-blue-600 text-white px-6 py-2 hover:bg-blue-700"
-              >
+              <Button onClick={() => updateSettings('receipt')}>
                 Save Receipt Settings
-              </button>
+              </Button>
             </div>
-          </div>
+          </Card>
         </div>
       )}
 
       {/* Data Management */}
       {activeTab === 'data' && (
-        <div className="bg-white shadow border border-gray-200 p-6">
+        <Card className="p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-6">Data Management</h3>
           
           <div className="space-y-6">
             <div>
               <h4 className="font-medium text-gray-900 mb-3">Export Data</h4>
               <p className="text-sm text-gray-600 mb-4">Download all your business data in CSV format</p>
-              <button 
-                onClick={exportData}
-                className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 hover:bg-blue-700"
-              >
+              <Button onClick={exportData} className="flex items-center space-x-2">
                 <DocumentArrowDownIcon className="h-4 w-4" />
                 <span>Export All Data</span>
-              </button>
+              </Button>
             </div>
             
             <div className="pt-6 border-t border-gray-200">
               <h4 className="font-medium text-red-900 mb-3">Danger Zone</h4>
               <p className="text-sm text-red-600 mb-4">Permanently delete all your business data. This action cannot be undone.</p>
-              <button 
-                onClick={deleteAllData}
-                className="flex items-center space-x-2 bg-red-600 text-white px-4 py-2 hover:bg-red-700"
-              >
+              <Button onClick={deleteAllData} variant="danger" className="flex items-center space-x-2">
                 <TrashIcon className="h-4 w-4" />
                 <span>Delete All Data</span>
-              </button>
+              </Button>
             </div>
           </div>
-        </div>
+        </Card>
       )}
     </div>
   );

@@ -43,7 +43,18 @@ def sales(request):
             
             serializer = SaleSerializer(data=request.data, context={'request': request})
             if serializer.is_valid():
-                sale = serializer.save(business=business)
+                # Auto-assign store based on user role
+                store = None
+                if request.user.role == 'manager':
+                    # Manager - find their assigned store
+                    from stores.models import Store
+                    store = Store.objects.filter(business=business, manager_user=request.user).first()
+                elif request.user.role == 'owner':
+                    # Owner - assign to main store by default
+                    from stores.models import Store
+                    store = Store.objects.filter(business=business, is_main_store=True).first()
+                
+                sale = serializer.save(business=business, store=store)
                 
                 # Check for sales milestones
                 total_sales = Sale.objects.filter(business=business).aggregate(

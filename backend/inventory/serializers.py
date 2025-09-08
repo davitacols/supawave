@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Category, Supplier, Product, StockTake, StockTakeItem
+from .predictive_models import PredictiveAlert, PurchaseOrder, PurchaseOrderItem, SalesVelocity
 from .utils import generate_sku, generate_barcode
 from .rekognition_service import RekognitionService
 
@@ -104,3 +105,42 @@ class ProductCountSerializer(serializers.Serializer):
     physical_count = serializers.IntegerField(min_value=0)
     variance_reason = serializers.CharField(required=False, allow_blank=True)
     notes = serializers.CharField(required=False, allow_blank=True)
+
+class PredictiveAlertSerializer(serializers.ModelSerializer):
+    product_name = serializers.CharField(source='product.name', read_only=True)
+    product_sku = serializers.CharField(source='product.sku', read_only=True)
+    category_name = serializers.CharField(source='product.category.name', read_only=True)
+    current_stock = serializers.IntegerField(source='product.stock_quantity', read_only=True)
+    
+    class Meta:
+        model = PredictiveAlert
+        fields = ['id', 'alert_type', 'priority', 'message', 'predicted_stockout_date',
+                 'suggested_order_quantity', 'is_read', 'created_at', 'product_name',
+                 'product_sku', 'category_name', 'current_stock']
+
+class PurchaseOrderItemSerializer(serializers.ModelSerializer):
+    product_name = serializers.CharField(source='product.name', read_only=True)
+    product_sku = serializers.CharField(source='product.sku', read_only=True)
+    
+    class Meta:
+        model = PurchaseOrderItem
+        fields = ['id', 'product', 'product_name', 'product_sku', 'quantity',
+                 'unit_cost', 'total_cost', 'received_quantity']
+
+class PurchaseOrderSerializer(serializers.ModelSerializer):
+    items = PurchaseOrderItemSerializer(many=True, read_only=True)
+    supplier_name = serializers.CharField(source='supplier.name', read_only=True)
+    
+    class Meta:
+        model = PurchaseOrder
+        fields = ['id', 'po_number', 'supplier', 'supplier_name', 'status',
+                 'total_amount', 'expected_delivery', 'notes', 'is_auto_generated',
+                 'created_at', 'updated_at', 'items']
+
+class SalesVelocitySerializer(serializers.ModelSerializer):
+    days_until_stockout = serializers.IntegerField(read_only=True)
+    
+    class Meta:
+        model = SalesVelocity
+        fields = ['daily_avg_sales', 'weekly_avg_sales', 'monthly_avg_sales',
+                 'trend_direction', 'days_until_stockout', 'last_calculated']

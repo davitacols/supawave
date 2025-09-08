@@ -55,6 +55,9 @@ class BusinessDetailView(generics.RetrieveUpdateAPIView):
     permission_classes = [permissions.IsAuthenticated]
     
     def get_object(self):
+        if not hasattr(self.request.user, 'business') or not self.request.user.business:
+            from rest_framework.exceptions import NotFound
+            raise NotFound("Business not found")
         return self.request.user.business
 
 class StaffListCreateView(generics.ListCreateAPIView):
@@ -94,7 +97,10 @@ class StaffDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [permissions.IsAuthenticated]
     
     def get_queryset(self):
-        return User.objects.filter(business=self.request.user.business)
+        return User.objects.filter(
+            business=self.request.user.business,
+            role__in=['owner', 'manager', 'cashier']
+        )
     
     def perform_update(self, serializer):
         if self.request.user.role not in ['owner', 'manager']:
@@ -104,5 +110,4 @@ class StaffDetailView(generics.RetrieveUpdateDestroyAPIView):
     def perform_destroy(self, instance):
         if self.request.user.role != 'owner':
             raise permissions.PermissionDenied("Only owners can delete staff")
-        instance.is_active_staff = False
-        instance.save()
+        instance.delete()

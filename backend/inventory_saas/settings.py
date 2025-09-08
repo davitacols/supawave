@@ -30,9 +30,14 @@ INSTALLED_APPS = [
     'sync',
     'payments',
     'subscriptions',
+    # 'whatsapp_integration',  # Temporarily disabled
     'credit',
     'exports',
     'storages',
+    'stores',
+    'ai',
+    'marketplace',
+    'reports',
 ]
 
 MIDDLEWARE = [
@@ -70,10 +75,7 @@ ASGI_APPLICATION = 'inventory_saas.asgi.application'
 
 CHANNEL_LAYERS = {
     'default': {
-        'BACKEND': 'channels_redis.core.RedisChannelLayer',
-        'CONFIG': {
-            "hosts": [config('REDIS_URL', default='redis://127.0.0.1:6379')],
-        },
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
     },
 }
 
@@ -140,7 +142,25 @@ FROM_EMAIL = config('FROM_EMAIL', default='noreply@supawave.com')
 # Paystack Configuration
 PAYSTACK_SECRET_KEY = config('PAYSTACK_SECRET_KEY', default='')
 PAYSTACK_PUBLIC_KEY = config('PAYSTACK_PUBLIC_KEY', default='')
+
+# WhatsApp Configuration
+WHATSAPP_TOKEN = config('WHATSAPP_TOKEN', default='')
+WHATSAPP_PHONE_ID = config('WHATSAPP_PHONE_ID', default='')
+WHATSAPP_VERIFY_TOKEN = config('WHATSAPP_VERIFY_TOKEN', default='')
 FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:3000')
+
+# AI Configuration
+AI_PROVIDER = config('AI_PROVIDER', default='claude')
+CLAUDE_API_KEY = config('CLAUDE_API_KEY', default='')
+CLAUDE_MODEL = config('CLAUDE_MODEL', default='claude-3-haiku-20240307')
+
+# OpenAI Configuration (backup)
+OPENAI_API_KEY = config('OPENAI_API_KEY', default='')
+OPENAI_MODEL = config('OPENAI_MODEL', default='gpt-3.5-turbo')
+
+# Ollama AI Configuration (backup)
+OLLAMA_BASE_URL = config('OLLAMA_BASE_URL', default='http://localhost:11434')
+OLLAMA_MODEL = config('OLLAMA_MODEL', default='phi3:mini')
 
 # Email Configuration
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'

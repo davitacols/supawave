@@ -1,6 +1,6 @@
-import ErrorHandler from './errorHandler';
+// import ErrorHandler from './errorHandler'; // Unused for now
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://192.168.0.183:8000/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
 
 const apiRequest = async (endpoint, options = {}) => {
   const token = localStorage.getItem('access_token');
@@ -140,4 +140,45 @@ export const paymentAPI = {
   cancelSubscription: () => api.post('/payments/cancel/'),
 };
 
+export const storesAPI = {
+  getStores: () => api.get('/stores/'),
+  createStore: (data) => api.post('/stores/', data),
+  updateStore: (id, data) => api.put(`/stores/${id}/`, data),
+  deleteStore: (id) => api.delete(`/stores/${id}/`),
+  setMainStore: (id) => api.post(`/stores/${id}/set_main/`),
+  getStoreInventory: (id) => api.get(`/stores/${id}/inventory/`),
+  addProductToStore: (storeId, data) => api.post(`/stores/${storeId}/add-product/`, data),
+  getTransfers: () => api.get('/transfers/'),
+  createTransfer: (data) => api.post('/transfers/', data),
+  approveTransfer: (id) => api.post(`/transfers/${id}/approve/`),
+  completeTransfer: (id) => api.post(`/transfers/${id}/complete/`),
+  cancelTransfer: (id) => api.post(`/transfers/${id}/cancel/`),
+};
+
+export const marketplaceAPI = {
+  getListings: () => api.get('/marketplace/listings/'),
+  createListing: (data) => api.post('/marketplace/listings/', data),
+  getMyListings: () => api.get('/marketplace/listings/my_listings/'),
+  makeOffer: (listingId, data) => api.post(`/marketplace/listings/${listingId}/make_offer/`, data),
+  getOffers: () => api.get('/marketplace/offers/'),
+  acceptOffer: (offerId) => api.post(`/marketplace/offers/${offerId}/accept/`),
+  rejectOffer: (offerId) => api.post(`/marketplace/offers/${offerId}/reject/`),
+  getGroupBuys: () => api.get('/marketplace/group-buys/'),
+  createGroupBuy: (data) => api.post('/marketplace/group-buys/', data),
+  joinGroupBuy: (groupBuyId, data) => api.post(`/marketplace/group-buys/${groupBuyId}/join/`, data),
+  getSuppliers: () => api.get('/marketplace/suppliers/'),
+  createSupplier: (data) => api.post('/marketplace/suppliers/', data),
+  addSupplierReview: (supplierId, data) => api.post(`/marketplace/suppliers/${supplierId}/add_review/`, data),
+};
+
+export const reportsAPI = {
+  getDailyReport: (date) => api.get(`/reports/daily/?date=${date}`),
+  getMonthlyReport: (month, year) => api.get(`/reports/monthly/?month=${month}&year=${year}`),
+  getYearlyReport: (year) => api.get(`/reports/yearly/?year=${year}`),
+  exportDailyCSV: (date) => `/reports/export/daily/?date=${date}`,
+  exportMonthlyCSV: (month, year) => `/reports/export/monthly/?month=${month}&year=${year}`,
+  exportYearlyCSV: (year) => `/reports/export/yearly/?year=${year}`,
+};
+
+export { api };
 export default api;

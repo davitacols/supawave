@@ -1,65 +1,74 @@
-import React, { useState } from 'react';
-import { Modal } from './ui/Modal';
-import { Input } from './ui/Input';
-import { Button } from './ui/Button';
-import { Card, CardContent } from './ui/Card';
+import React from 'react';
+import { ChatBubbleLeftRightIcon } from '@heroicons/react/24/outline';
 
-const WhatsAppShare = ({ isOpen, onClose, receiptData }) => {
-  const [phoneNumber, setPhoneNumber] = useState('');
+const WhatsAppShare = ({ type, data, customerPhone }) => {
+  const generateMessage = () => {
+    switch (type) {
+      case 'receipt':
+        return `🧾 *RECEIPT - ${data.business_name}*\n\n` +
+               `📅 Date: ${new Date(data.date).toLocaleDateString()}\n` +
+               `🆔 Sale ID: #${data.id}\n\n` +
+               `📦 *ITEMS:*\n${data.items.map(item => 
+                 `• ${item.name} x${item.quantity} - ₦${(item.price * item.quantity).toLocaleString()}`
+               ).join('\n')}\n\n` +
+               `💰 *Total: ₦${data.total.toLocaleString()}*\n\n` +
+               `Thank you for shopping with us! 🙏`;
 
-  const sendWhatsApp = () => {
-    if (!phoneNumber.trim()) {
-      alert('Please enter phone number');
-      return;
+      case 'low_stock':
+        return `⚠️ *LOW STOCK ALERT*\n\n` +
+               `📦 Product: ${data.name}\n` +
+               `📊 Current Stock: ${data.stock}\n` +
+               `🔔 Threshold: ${data.threshold}\n\n` +
+               `Please restock soon!`;
+
+      case 'order_confirmation':
+        return `✅ *ORDER CONFIRMED*\n\n` +
+               `Hi ${data.customer_name}!\n\n` +
+               `Your order has been received:\n${data.items.map(item => 
+                 `• ${item.name} x${item.quantity}`
+               ).join('\n')}\n\n` +
+               `💰 Total: ₦${data.total.toLocaleString()}\n` +
+               `🕐 Ready in: ${data.prep_time || '15 minutes'}\n\n` +
+               `We'll notify you when ready! 📱`;
+
+      default:
+        return 'Hello from SupaWave! 👋';
     }
+  };
 
-    const message = receiptData ? 
-      `🧾 Receipt from SupaWave\n\n` +
-      `Receipt #: ${receiptData.id}\n` +
-      `Total: ₦${receiptData.total_amount}\n` +
-      `Date: ${new Date().toLocaleDateString()}\n\n` +
-      `Thank you for shopping with us! 🙏` :
-      `📊 Business Update\n\n` +
-      `Daily sales report and updates from your store.\n\n` +
-      `Powered by SupaWave POS 🚀`;
-
-    const whatsappUrl = `https://wa.me/${phoneNumber.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
-    onClose();
+  const sendWhatsApp = async () => {
+    const message = generateMessage();
+    const phone = customerPhone || '';
+    
+    try {
+      // Try API first
+      const response = await fetch('/api/whatsapp/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+        },
+        body: JSON.stringify({ to: phone, message })
+      });
+      
+      if (!response.ok) {
+        throw new Error('API failed');
+      }
+    } catch (error) {
+      // Fallback to WhatsApp Web
+      const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+      window.open(url, '_blank');
+    }
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Send via WhatsApp">
-      <div className="space-y-4">
-        <Card>
-          <CardContent>
-            <div className="text-center mb-4">
-              <div className="text-4xl mb-2">📱</div>
-              <h3 className="font-semibold">Share via WhatsApp</h3>
-              <p className="text-sm text-gray-600">
-                {receiptData ? 'Send receipt to customer' : 'Share business update'}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Input
-          label="Phone Number"
-          placeholder="e.g., +2348012345678"
-          value={phoneNumber}
-          onChange={(e) => setPhoneNumber(e.target.value)}
-        />
-
-        <div className="flex space-x-3">
-          <Button onClick={sendWhatsApp} className="flex-1">
-            Send WhatsApp
-          </Button>
-          <Button variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-        </div>
-      </div>
-    </Modal>
+    <button
+      onClick={sendWhatsApp}
+      className="inline-flex items-center px-3 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors"
+    >
+      <ChatBubbleLeftRightIcon className="h-4 w-4 mr-2" />
+      Send via WhatsApp
+    </button>
   );
 };
 

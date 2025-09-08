@@ -9,37 +9,44 @@ const NotificationBell = () => {
   const dropdownRef = useRef(null);
 
   useEffect(() => {
-    // Mock notifications - replace with real API calls
-    const mockNotifications = [
-      {
-        id: 1,
-        type: 'low_stock',
-        title: 'Low Stock Alert',
-        message: 'Rice (1kg) is running low - only 5 units left',
-        timestamp: new Date(Date.now() - 5 * 60 * 1000),
-        read: false
-      },
-      {
-        id: 2,
-        type: 'out_of_stock',
-        title: 'Out of Stock',
-        message: 'Cooking Oil (500ml) is out of stock',
-        timestamp: new Date(Date.now() - 15 * 60 * 1000),
-        read: false
-      },
-      {
-        id: 3,
-        type: 'sale',
-        title: 'New Sale',
-        message: 'Sale completed - ₦15,000 total',
-        timestamp: new Date(Date.now() - 30 * 60 * 1000),
-        read: true
-      }
-    ];
+    fetchNotifications();
+    connectWebSocket();
     
-    setNotifications(mockNotifications);
-    setUnreadCount(mockNotifications.filter(n => !n.read).length);
+    return () => {
+      if (window.notificationInterval) {
+        clearInterval(window.notificationInterval);
+      }
+    };
   }, []);
+
+  const fetchNotifications = async () => {
+    try {
+      const response = await fetch('http://localhost:8000/api/notifications/', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+        }
+      });
+      const data = await response.json();
+      const notificationList = data.results || data || [];
+      setNotifications(notificationList);
+      setUnreadCount(notificationList.filter(n => !n.is_read).length);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    }
+  };
+
+  const connectWebSocket = () => {
+    // Use polling instead of WebSocket for now
+    const pollNotifications = () => {
+      fetchNotifications();
+    };
+    
+    // Poll every 10 seconds
+    const interval = setInterval(pollNotifications, 10000);
+    
+    // Store interval for cleanup
+    window.notificationInterval = interval;
+  };
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -141,7 +148,7 @@ const NotificationBell = () => {
                 <div
                   key={notification.id}
                   className={`p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer ${
-                    !notification.read ? 'bg-blue-50' : ''
+                    !notification.is_read ? 'bg-blue-50' : ''
                   }`}
                   onClick={() => markAsRead(notification.id)}
                 >
@@ -150,11 +157,11 @@ const NotificationBell = () => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
                         <p className={`text-sm font-medium ${
-                          !notification.read ? 'text-gray-900' : 'text-gray-700'
+                          !notification.is_read ? 'text-gray-900' : 'text-gray-700'
                         }`}>
                           {notification.title}
                         </p>
-                        {!notification.read && (
+                        {!notification.is_read && (
                           <div className="w-2 h-2 bg-red-600 rounded-full"></div>
                         )}
                       </div>
@@ -162,7 +169,7 @@ const NotificationBell = () => {
                         {notification.message}
                       </p>
                       <p className="text-xs text-gray-400 mt-1">
-                        {getTimeAgo(notification.timestamp)}
+                        {getTimeAgo(new Date(notification.created_at || notification.timestamp))}
                       </p>
                     </div>
                   </div>

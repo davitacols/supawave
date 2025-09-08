@@ -1,77 +1,129 @@
 import React, { useState, useEffect } from 'react';
-import { CheckCircleIcon, XCircleIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import { 
+  CheckCircleIcon, 
+  ExclamationTriangleIcon, 
+  XCircleIcon, 
+  InformationCircleIcon,
+  XMarkIcon 
+} from '@heroicons/react/24/outline';
 
-export const Toast = ({ message, type = 'success', onClose, duration = 3000 }) => {
+const Toast = ({ 
+  message, 
+  type = "info", 
+  duration = 5000, 
+  onClose,
+  className = ""
+}) => {
   const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsVisible(false);
-      setTimeout(onClose, 300);
+      setTimeout(onClose, 300); // Wait for animation
     }, duration);
 
     return () => clearTimeout(timer);
   }, [duration, onClose]);
 
-  const icons = {
-    success: CheckCircleIcon,
-    error: XCircleIcon,
-    warning: ExclamationTriangleIcon
+  const types = {
+    success: {
+      icon: CheckCircleIcon,
+      className: "bg-success-50 border-success-200 text-success-800"
+    },
+    error: {
+      icon: XCircleIcon,
+      className: "bg-error-50 border-error-200 text-error-800"
+    },
+    warning: {
+      icon: ExclamationTriangleIcon,
+      className: "bg-warning-50 border-warning-200 text-warning-800"
+    },
+    info: {
+      icon: InformationCircleIcon,
+      className: "bg-primary-50 border-primary-200 text-primary-800"
+    }
   };
 
-  const colors = {
-    success: 'bg-green-50 border-green-200 text-green-800',
-    error: 'bg-red-50 border-red-200 text-red-800',
-    warning: 'bg-yellow-50 border-yellow-200 text-yellow-800'
-  };
-
-  const Icon = icons[type];
+  const { icon: Icon, className: typeClassName } = types[type];
 
   return (
-    <div className={`fixed top-4 right-4 z-50 transition-all duration-300 ${
-      isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'
-    }`}>
-      <div className={`flex items-center p-4 border rounded-lg shadow-lg ${colors[type]}`}>
-        <Icon className="w-5 h-5 mr-3" />
-        <span className="text-sm font-medium">{message}</span>
+    <div className={`
+      fixed top-4 right-4 z-50 max-w-sm w-full
+      transform transition-all duration-300 ease-in-out
+      ${isVisible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'}
+    `}>
+      <div className={`
+        flex items-start p-4 border rounded-2xl shadow-strong backdrop-blur-sm
+        ${typeClassName} ${className}
+      `}>
+        <Icon className="h-5 w-5 mt-0.5 mr-3 flex-shrink-0" />
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium">{message}</p>
+        </div>
         <button
           onClick={() => {
             setIsVisible(false);
             setTimeout(onClose, 300);
           }}
-          className="ml-4 text-gray-400 hover:text-gray-600"
+          className="ml-3 flex-shrink-0 p-1 hover:bg-black/10 rounded-lg transition-colors"
         >
-          ×
+          <XMarkIcon className="h-4 w-4" />
         </button>
       </div>
     </div>
   );
 };
 
-export const useToast = () => {
+// Toast Container Component
+export const ToastContainer = () => {
   const [toasts, setToasts] = useState([]);
 
-  const showToast = (message, type = 'success') => {
+  const addToast = (message, type = "info", duration = 5000) => {
     const id = Date.now();
-    setToasts(prev => [...prev, { id, message, type }]);
+    setToasts(prev => [...prev, { id, message, type, duration }]);
   };
 
   const removeToast = (id) => {
     setToasts(prev => prev.filter(toast => toast.id !== id));
   };
 
-  const ToastContainer = () => (
-    <>
+  // Expose addToast globally
+  useEffect(() => {
+    window.showToast = addToast;
+    return () => {
+      delete window.showToast;
+    };
+  }, []);
+
+  return (
+    <div className="fixed top-4 right-4 z-50 space-y-2">
       {toasts.map(toast => (
         <Toast
           key={toast.id}
           message={toast.message}
           type={toast.type}
+          duration={toast.duration}
           onClose={() => removeToast(toast.id)}
         />
       ))}
-    </>
+    </div>
   );
-
-  return { showToast, ToastContainer };
 };
+
+// Hook for using toasts
+export const useToast = () => {
+  const showToast = (message, type = "info", duration = 5000) => {
+    if (window.showToast) {
+      window.showToast(message, type, duration);
+    }
+  };
+
+  return {
+    success: (message, duration) => showToast(message, "success", duration),
+    error: (message, duration) => showToast(message, "error", duration),
+    warning: (message, duration) => showToast(message, "warning", duration),
+    info: (message, duration) => showToast(message, "info", duration)
+  };
+};
+
+export default Toast;

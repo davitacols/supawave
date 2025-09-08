@@ -14,10 +14,14 @@ urlpatterns = [
     path('api/notifications/', include('notifications.urls')),
     path('api/whatsapp/', include('whatsapp.urls')),
     path('api/sync/', include('sync.urls')),
+    path('api/', include('stores.urls')),
     path('api/payments/', include('payments.urls')),
 
     path('api/credit/', include('credit.urls')),
     path('api/exports/', include('exports.urls')),
+    path('api/ai/', include('ai.urls')),
+    path('api/marketplace/', include('marketplace.urls')),
+    path('api/reports/', include('reports.urls')),
 ]
 
 if settings.DEBUG:

@@ -2,9 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { 
   PlusIcon, PencilIcon, TrashIcon, EyeIcon, UserGroupIcon,
   ShieldCheckIcon, ClockIcon, CalendarIcon, ChartBarIcon,
-  CheckCircleIcon, XCircleIcon, KeyIcon
+  CheckCircleIcon, XCircleIcon, KeyIcon, MagnifyingGlassIcon
 } from '@heroicons/react/24/outline';
 import { authAPI, salesAPI } from '../utils/api';
+import { Card } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
+import { Input } from '../components/ui/Input';
+import { Badge } from '../components/ui/Badge';
+import { Table } from '../components/ui/Table';
+import { Modal } from '../components/ui/Modal';
 
 const StaffManagement = () => {
   const [staff, setStaff] = useState([]);
@@ -253,47 +259,43 @@ const StaffManagement = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-white p-4 sm:p-6 shadow rounded-lg">
+      <Card>
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start space-y-4 sm:space-y-0">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Staff Management</h1>
+            <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">Staff Management</h1>
             <p className="text-gray-600 mt-1 text-sm sm:text-base">Manage team members, roles, and permissions</p>
           </div>
-          <button
-            onClick={() => openModal()}
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 flex items-center justify-center space-x-2 text-sm sm:text-base"
-          >
-            <PlusIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+          <Button onClick={() => openModal()} className="flex items-center space-x-2">
+            <PlusIcon className="h-4 w-4" />
             <span>Add Staff Member</span>
-          </button>
+          </Button>
         </div>
-      </div>
+      </Card>
 
       {/* Tabs */}
-      <div className="bg-white shadow rounded-lg">
+      <Card>
         <div className="border-b border-gray-200">
-          <nav className="flex space-x-2 sm:space-x-8 px-4 sm:px-6 overflow-x-auto">
+          <nav className="flex space-x-8 px-6 overflow-x-auto">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center space-x-1 sm:space-x-2 py-3 sm:py-4 px-1 border-b-2 font-medium text-xs sm:text-sm whitespace-nowrap ${
+                className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
                   activeTab === tab.id
                     ? 'border-blue-500 text-blue-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
               >
-                <tab.icon className="h-4 w-4 sm:h-5 sm:w-5" />
-                <span className="hidden sm:inline">{tab.name}</span>
-                <span className="sm:hidden">{tab.name.split(' ')[0]}</span>
-                <span className="bg-gray-100 text-gray-600 px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs font-medium rounded">
+                <tab.icon className="h-5 w-5" />
+                <span>{tab.name}</span>
+                <Badge variant="secondary" className="ml-2">
                   {tab.count}
-                </span>
+                </Badge>
               </button>
             ))}
           </nav>
         </div>
-      </div>
+      </Card>
 
       {/* Content */}
       {activeTab === 'staff' && (
@@ -345,21 +347,19 @@ const StaffTab = ({
 }) => (
   <div className="space-y-6">
     {/* Filters */}
-    <div className="bg-white p-6 shadow">
+    <div className="bg-white p-4 shadow rounded-lg">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="Search staff members..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full border border-gray-300 px-3 py-2"
-          />
-        </div>
+        <input
+          type="text"
+          placeholder="Search staff members..."
+          className="w-full pl-4 pr-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
         <select
           value={roleFilter}
           onChange={(e) => setRoleFilter(e.target.value)}
-          className="w-full border border-gray-300 px-3 py-2"
+          className="w-full border border-gray-300 px-3 py-2 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white"
         >
           <option value="all">All Roles</option>
           <option value="owner">Owner</option>
@@ -370,9 +370,9 @@ const StaffTab = ({
     </div>
 
     {/* Staff List */}
-    <div className="bg-white shadow">
+    <Card>
       <div className="px-6 py-4 border-b border-gray-200">
-        <h2 className="text-lg font-medium">Team Members ({staff.length})</h2>
+        <h2 className="text-lg font-medium text-gray-900">Team Members ({staff.length})</h2>
       </div>
       
       {staff.length === 0 ? (
@@ -382,99 +382,75 @@ const StaffTab = ({
           <p className="text-gray-500">Add your first team member to get started</p>
         </div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Staff Member</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Contact</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Last Active</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {staff.map((member) => (
-                <tr key={member.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="w-10 h-10 bg-blue-100 flex items-center justify-center text-blue-600 font-bold overflow-hidden">
-                        {member.profile_image ? (
-                          <img src={member.profile_image} alt="Profile" className="w-full h-full object-cover" />
-                        ) : (
-                          <span>{member.first_name?.charAt(0)}{member.last_name?.charAt(0)}</span>
-                        )}
-                      </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">
-                          {member.first_name} {member.last_name}
-                        </div>
-                        <div className="text-sm text-gray-500">@{member.username}</div>
-                      </div>
+        <div className="divide-y divide-gray-200">
+          {staff.map((member) => (
+            <div key={member.id} className="p-6 hover:bg-gray-50">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center text-gray-600 font-medium overflow-hidden">
+                    {member.profile_image ? (
+                      <img src={member.profile_image} alt="Profile" className="w-full h-full object-cover" />
+                    ) : (
+                      <span>{member.first_name?.charAt(0)}{member.last_name?.charAt(0)}</span>
+                    )}
+                  </div>
+                  <div>
+                    <div className="flex items-center space-x-2">
+                      <h3 className="text-lg font-medium text-gray-900">
+                        {member.first_name} {member.last_name}
+                      </h3>
+                      <Badge variant={member.role === 'owner' ? 'primary' : member.role === 'manager' ? 'secondary' : 'default'}>
+                        {member.role?.toUpperCase()}
+                      </Badge>
                     </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 text-xs font-semibold ${getRoleColor(member.role)}`}>
-                      {member.role?.toUpperCase()}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    <div>{member.email}</div>
-                    <div className="text-gray-500">{member.phone_number}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center space-x-4 mt-1 text-sm text-gray-500">
+                      <span>@{member.username}</span>
+                      <span>{member.email}</span>
+                      {member.phone_number && <span>{member.phone_number}</span>}
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center space-x-6">
+                  <div className="text-right">
+                    <Badge variant={member.is_active_staff ? 'success' : 'error'}>
+                      {member.is_active_staff ? 'Active' : 'Inactive'}
+                    </Badge>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Last: {member.last_login ? new Date(member.last_login).toLocaleDateString() : 'Never'}
+                    </p>
+                  </div>
+                  
+                  <div className="flex space-x-2">
                     <button
-                      onClick={() => onToggleStatus(member.id, member.is_active_staff)}
-                      className={`flex items-center space-x-1 px-2 py-1 text-xs font-semibold ${
-                        member.is_active_staff 
-                          ? 'bg-green-100 text-green-800 hover:bg-green-200' 
-                          : 'bg-red-100 text-red-800 hover:bg-red-200'
-                      }`}
+                      onClick={() => onViewActivity(member)}
+                      className="p-2 text-gray-400 hover:text-blue-600"
+                      title="View Activity"
                     >
-                      {member.is_active_staff ? (
-                        <CheckCircleIcon className="h-3 w-3" />
-                      ) : (
-                        <XCircleIcon className="h-3 w-3" />
-                      )}
-                      <span>{member.is_active_staff ? 'Active' : 'Inactive'}</span>
+                      <ClockIcon className="h-4 w-4" />
                     </button>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {member.last_login ? new Date(member.last_login).toLocaleDateString() : 'Never'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => onViewActivity(member)}
-                        className="p-2 text-gray-400 hover:text-blue-600"
-                        title="View Activity"
-                      >
-                        <ClockIcon className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => onEdit(member)}
-                        className="p-2 text-gray-400 hover:text-blue-600"
-                        title="Edit Staff"
-                      >
-                        <PencilIcon className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => onDelete(member.id)}
-                        className="p-2 text-gray-400 hover:text-red-600"
-                        title="Remove Staff"
-                      >
-                        <TrashIcon className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                    <button
+                      onClick={() => onEdit(member)}
+                      className="p-2 text-gray-400 hover:text-blue-600"
+                      title="Edit Staff"
+                    >
+                      <PencilIcon className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => onDelete(member.id)}
+                      className="p-2 text-gray-400 hover:text-red-600"
+                      title="Remove Staff"
+                    >
+                      <TrashIcon className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       )}
-    </div>
+    </Card>
   </div>
 );
 
@@ -488,9 +464,9 @@ const getRoleColor = (role) => {
 };
 
 const RolesTab = () => (
-  <div className="bg-white shadow">
+  <Card>
     <div className="px-6 py-4 border-b border-gray-200">
-      <h2 className="text-lg font-medium">Roles & Permissions</h2>
+      <h2 className="text-lg font-medium text-gray-900">Roles & Permissions</h2>
     </div>
     <div className="p-6">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -514,9 +490,9 @@ const RolesTab = () => (
             color: 'green'
           }
         ].map((roleInfo, index) => (
-          <div key={index} className="border border-gray-200 p-6">
+          <Card key={index} className="p-6">
             <div className="flex items-center space-x-3 mb-4">
-              <ShieldCheckIcon className={`h-8 w-8 text-${roleInfo.color}-600`} />
+              <ShieldCheckIcon className="h-8 w-8 text-gray-600" />
               <div>
                 <h3 className="text-lg font-medium text-gray-900">{roleInfo.role}</h3>
                 <p className="text-sm text-gray-500">{roleInfo.description}</p>
@@ -533,17 +509,17 @@ const RolesTab = () => (
                 ))}
               </ul>
             </div>
-          </div>
+          </Card>
         ))}
       </div>
     </div>
-  </div>
+  </Card>
 );
 
 const ActivityTab = () => (
-  <div className="bg-white shadow">
+  <Card>
     <div className="px-6 py-4 border-b border-gray-200">
-      <h2 className="text-lg font-medium">Recent Activity</h2>
+      <h2 className="text-lg font-medium text-gray-900">Recent Activity</h2>
     </div>
     <div className="p-6">
       <div className="text-center py-12">
@@ -552,7 +528,7 @@ const ActivityTab = () => (
         <p className="text-gray-500">Staff activity logs will appear here</p>
       </div>
     </div>
-  </div>
+  </Card>
 );
 
 const StaffModal = ({ formData, setFormData, editingStaff, onSubmit, onClose, loading, onImageChange, imagePreview }) => (

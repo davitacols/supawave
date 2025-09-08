@@ -83,11 +83,18 @@ class StockTake(models.Model):
         ('cancelled', 'Cancelled'),
     ]
     
+    STOCKTAKE_TYPES = [
+        ('manual', 'Manual Count'),
+        ('cycle', 'Cycle Count'),
+        ('automatic', 'Automatic Daily'),
+    ]
+    
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     business = models.ForeignKey(Business, on_delete=models.CASCADE)
-    created_by = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
     name = models.CharField(max_length=100)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='in_progress')
+    stocktake_type = models.CharField(max_length=20, choices=STOCKTAKE_TYPES, default='manual')
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     completed_at = models.DateTimeField(null=True, blank=True)
@@ -105,13 +112,13 @@ class StockTakeItem(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     stock_take = models.ForeignKey(StockTake, on_delete=models.CASCADE, related_name='items')
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    system_count = models.IntegerField()
-    physical_count = models.IntegerField(default=0)
+    expected_quantity = models.IntegerField()
+    actual_quantity = models.IntegerField(default=0)
     variance = models.IntegerField(default=0)
     variance_reason = models.CharField(max_length=20, choices=VARIANCE_REASONS, blank=True)
     notes = models.TextField(blank=True)
     counted_at = models.DateTimeField(auto_now=True)
     
     def save(self, *args, **kwargs):
-        self.variance = self.physical_count - self.system_count
+        self.variance = self.actual_quantity - self.expected_quantity
         super().save(*args, **kwargs)

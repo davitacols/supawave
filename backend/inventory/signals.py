@@ -23,8 +23,8 @@ def product_updated(sender, instance, created, **kwargs):
         }
     )
     
-    # Send stock alert if quantity is low
-    if instance.quantity <= instance.low_stock_threshold:
+    # Send stock alert if stock quantity is low
+    if instance.stock_quantity <= instance.low_stock_threshold:
         async_to_sync(channel_layer.group_send)(
             f'inventory_{instance.business.id}',
             {
@@ -32,7 +32,7 @@ def product_updated(sender, instance, created, **kwargs):
                 'data': {
                     'product_id': str(instance.id),
                     'name': instance.name,
-                    'quantity': instance.quantity,
+                    'quantity': instance.stock_quantity,
                     'threshold': instance.low_stock_threshold
                 }
             }

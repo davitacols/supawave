@@ -13,18 +13,26 @@ import Settings from './pages/Settings';
 import StoreProfile from './pages/StoreProfile';
 import StaffManagement from './pages/StaffManagement';
 import StoreCustomization from './pages/StoreCustomization';
+import StoreManagement from './pages/StoreManagement';
+import InventoryTransfers from './pages/InventoryTransfers';
+import StoreInventory from './pages/StoreInventory';
 import WhatsApp from './pages/WhatsApp';
 import Subscribe from './pages/Subscribe';
 import Subscription from './pages/Subscription';
+import WhatsAppIntegration from './pages/WhatsAppIntegration';
 import StockTake from './pages/StockTake';
 import StockTakeDetail from './pages/StockTakeDetail';
 import Credit from './pages/Credit';
 import Billing from './pages/Billing';
 import PaymentCallback from './pages/PaymentCallback';
-import PaymentTest from './pages/PaymentTest';
+import SmartReorder from './pages/SmartReorder';
+import Marketplace from './pages/Marketplace';
+import AICoach from './pages/AICoach';
+// import PaymentTest from './pages/PaymentTest'; // Unused
 import Layout from './components/Layout';
 import PWAInstaller from './components/PWAInstaller';
 import OfflineIndicator from './components/OfflineIndicator';
+import { ToastContainer } from './components/ui/Toast';
 
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem('access_token');
@@ -40,7 +48,7 @@ function App() {
   }, []);
 
   return (
-    <Router>
+    <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
@@ -165,9 +173,59 @@ function App() {
             </Layout>
           </ProtectedRoute>
         } />
+        <Route path="/stores" element={
+          <ProtectedRoute>
+            <Layout>
+              <StoreManagement />
+            </Layout>
+          </ProtectedRoute>
+        } />
+        <Route path="/transfers" element={
+          <ProtectedRoute>
+            <Layout>
+              <InventoryTransfers />
+            </Layout>
+          </ProtectedRoute>
+        } />
+        <Route path="/stores/:storeId/inventory" element={
+          <ProtectedRoute>
+            <Layout>
+              <StoreInventory />
+            </Layout>
+          </ProtectedRoute>
+        } />
+        <Route path="/whatsapp-integration" element={
+          <ProtectedRoute>
+            <Layout>
+              <WhatsAppIntegration />
+            </Layout>
+          </ProtectedRoute>
+        } />
+        <Route path="/smart-reorder" element={
+          <ProtectedRoute>
+            <Layout>
+              <SmartReorder />
+            </Layout>
+          </ProtectedRoute>
+        } />
+        <Route path="/marketplace" element={
+          <ProtectedRoute>
+            <Layout>
+              <Marketplace />
+            </Layout>
+          </ProtectedRoute>
+        } />
+        <Route path="/ai-coach" element={
+          <ProtectedRoute>
+            <Layout>
+              <AICoach />
+            </Layout>
+          </ProtectedRoute>
+        } />
       </Routes>
       <PWAInstaller />
       <OfflineIndicator />
+      <ToastContainer />
     </Router>
   );
 }

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authAPI } from '../utils/api';
 import { EyeIcon, EyeSlashIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
+import Logo from '../components/Logo';
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -21,13 +22,27 @@ const Register = () => {
     setLoading(true);
 
     try {
-      await authAPI.register(formData);
-      alert('Registration successful! Please login.');
-      navigate('/login');
+      const registrationData = {
+        username: formData.owner_name.replace(/\s+/g, '').toLowerCase(),
+        email: formData.email,
+        password: formData.password,
+        first_name: formData.owner_name.split(' ')[0] || '',
+        last_name: formData.owner_name.split(' ').slice(1).join(' ') || '',
+        phone_number: formData.phone,
+        business_name: formData.business_name
+      };
+      
+      const response = await authAPI.register(registrationData);
+      localStorage.setItem('access_token', response.data.tokens.access);
+      localStorage.setItem('refresh_token', response.data.tokens.refresh);
+      localStorage.setItem('user', JSON.stringify(response.data.user));
+      navigate('/');
     } catch (error) {
       const errors = error.response?.data;
       if (errors?.email) {
         alert(`Email error: ${errors.email[0]}`);
+      } else if (errors?.username) {
+        alert(`Username error: ${errors.username[0]}`);
       } else if (errors?.error) {
         alert(errors.error);
       } else {
@@ -40,7 +55,7 @@ const Register = () => {
 
   return (
     <div className="h-screen flex overflow-hidden">
-      <style jsx>{`
+      <style>{`
         @keyframes float {
           0%, 100% { transform: translateY(0px) rotate(0deg); }
           50% { transform: translateY(-20px) rotate(180deg); }
@@ -79,7 +94,7 @@ const Register = () => {
         <div className="max-w-sm w-full transform animate-slide-in-left">
           <div className="text-center mb-3">
             <div className="lg:hidden mb-3">
-              <h1 className="text-2xl font-bold text-red-600 animate-bounce-slow">SupaWave</h1>
+              <Logo size="large" className="animate-bounce-slow" />
             </div>
             <h2 className="text-xl font-bold text-gray-900 mb-1 transform hover:scale-105 transition-transform duration-300">
               Start your free trial
@@ -98,7 +113,7 @@ const Register = () => {
                 <input
                   type="text"
                   required
-                  className="w-full px-2 py-1.5 text-sm border border-gray-300  focus:ring-1 focus:ring-red-500 focus:border-red-500 transition-all duration-300 transform focus:scale-105 hover:shadow-lg bg-gradient-to-r from-white to-gray-50"
+                  className="w-full pl-4 pr-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 hover:border-gray-400 focus:scale-105"
                   placeholder="Your store"
                   value={formData.business_name}
                   onChange={(e) => setFormData({...formData, business_name: e.target.value})}
@@ -111,7 +126,7 @@ const Register = () => {
                 <input
                   type="text"
                   required
-                  className="w-full px-2 py-1.5 text-sm border border-gray-300  focus:ring-1 focus:ring-red-500 focus:border-red-500 transition-all duration-300 transform focus:scale-105 hover:shadow-lg bg-gradient-to-r from-white to-gray-50"
+                  className="w-full pl-4 pr-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 hover:border-gray-400 focus:scale-105"
                   placeholder="Your name"
                   value={formData.owner_name}
                   onChange={(e) => setFormData({...formData, owner_name: e.target.value})}
@@ -126,7 +141,7 @@ const Register = () => {
               <input
                 type="email"
                 required
-                className="w-full px-2 py-1.5 text-sm border border-gray-300  focus:ring-1 focus:ring-red-500 focus:border-red-500 transition-all duration-300 transform focus:scale-105 hover:shadow-lg bg-gradient-to-r from-white to-gray-50"
+                className="w-full pl-4 pr-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 hover:border-gray-400 focus:scale-105"
                 placeholder="your@email.com"
                 value={formData.email}
                 onChange={(e) => setFormData({...formData, email: e.target.value})}
@@ -141,7 +156,7 @@ const Register = () => {
                 <input
                   type="tel"
                   required
-                  className="w-full px-2 py-1.5 text-sm border border-gray-300  focus:ring-1 focus:ring-red-500 focus:border-red-500 transition-all duration-300 transform focus:scale-105 hover:shadow-lg bg-gradient-to-r from-white to-gray-50"
+                  className="w-full pl-4 pr-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 hover:border-gray-400 focus:scale-105"
                   placeholder="+234..."
                   value={formData.phone}
                   onChange={(e) => setFormData({...formData, phone: e.target.value})}
@@ -155,7 +170,7 @@ const Register = () => {
                   <input
                     type={showPassword ? 'text' : 'password'}
                     required
-                    className="w-full px-2 py-1.5 pr-8 text-sm border border-gray-300  focus:ring-1 focus:ring-red-500 focus:border-red-500 transition-all duration-300 transform focus:scale-105 hover:shadow-lg bg-gradient-to-r from-white to-gray-50"
+                    className="w-full pl-4 pr-12 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 hover:border-gray-400 focus:scale-105"
                     placeholder="Password"
                     value={formData.password}
                     onChange={(e) => setFormData({...formData, password: e.target.value})}
@@ -181,7 +196,7 @@ const Register = () => {
               </label>
               <input
                 type="text"
-                className="w-full px-2 py-1.5 text-sm border border-gray-300  focus:ring-1 focus:ring-red-500 focus:border-red-500 transition-all duration-300 transform focus:scale-105 hover:shadow-lg bg-gradient-to-r from-white to-gray-50"
+                className="w-full pl-4 pr-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 hover:border-gray-400 focus:scale-105"
                 placeholder="Business location"
                 value={formData.address}
                 onChange={(e) => setFormData({...formData, address: e.target.value})}
@@ -228,7 +243,9 @@ const Register = () => {
         <div className="absolute inset-0 bg-black opacity-20"></div>
         <div className="relative z-10 flex flex-col justify-center px-6 text-white animate-fade-in-up">
           <div className="mb-6 transform hover:scale-105 transition-transform duration-300">
-            <h1 className="text-4xl font-bold mb-3 bg-gradient-to-r from-white to-red-100 bg-clip-text text-transparent animate-bounce-slow">SupaWave</h1>
+            <div className="text-white animate-bounce-slow">
+              <Logo size="large" className="text-white" />
+            </div>
             <div className="w-16 h-1 bg-white  shadow-lg animate-expand"></div>
           </div>
           <h2 className="text-2xl font-light mb-4 leading-tight">
@@ -286,6 +303,7 @@ const Register = () => {
         <div className="absolute top-0 left-0 w-32 h-32 bg-white opacity-5  transform -translate-x-16 -translate-y-16 animate-float-reverse"></div>
         <div className="absolute top-1/2 left-1/4 w-16 h-16 bg-white opacity-10  animate-ping"></div>
       </div>
+      
     </div>
   );
 };
