@@ -54,12 +54,8 @@ app.get('/api/debug', (req, res) => {
 app.use('/api/inventory', require('./routes/inventory'));
 app.use('/api/sales', require('./routes/sales'));
 app.use('/api/customers', require('./routes/customers'));
-app.use('/api/analytics', require('./routes/analytics'));
-app.use('/api/notifications', require('./routes/notifications'));
-app.use('/api/marketplace', require('./routes/marketplace'));
-app.use('/api/dashboard', require('./routes/dashboard'));
+app.use('/api/reports', require('./routes/reports'));
 app.use('/api/staff', require('./routes/staff'));
-app.use('/api/stores', require('./routes/stores'));
 
 // Health check
 app.get('/', (req, res) => {

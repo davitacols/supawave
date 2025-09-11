@@ -1,6 +1,7 @@
 const express = require('express');
 const { Pool } = require('pg');
-const jwt = require('jsonwebtoken');
+const { authenticateToken } = require('../middleware/auth');
+const { validateProduct } = require('../middleware/validation');
 const router = express.Router();
 
 const pool = new Pool({
@@ -8,35 +9,36 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
-// Middleware to verify JWT
-const authenticateToken = (req, res, next) => {
-  const token = req.headers.authorization?.replace('Bearer ', '');
-  if (!token) {
-    return res.status(401).json({ error: 'No token provided' });
-  }
-  
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
-    req.user = decoded;
-    next();
-  } catch (error) {
-    return res.status(401).json({ error: 'Invalid token' });
-  }
-};
-
 // Get all products
 router.get('/products', authenticateToken, async (req, res) => {
   try {
-    const result = await pool.query(
-      `SELECT p.id, p.name, p.sku, p.barcode, p.cost_price, p.selling_price as price, 
-              p.stock_quantity as quantity, p.low_stock_threshold, p.is_active, 
-              p.created_at, p.updated_at, c.name as category 
-       FROM inventory_product p 
-       LEFT JOIN inventory_category c ON p.category_id = c.id 
-       WHERE p.business_id IN (SELECT id FROM accounts_business WHERE owner_id = $1) 
-       ORDER BY p.created_at DESC`,
-      [req.user.userId]
-    );
+    const { search, category, low_stock } = req.query;
+    let query = `
+      SELECT p.*, c.name as category_name,
+             CASE WHEN p.quantity <= p.reorder_level THEN true ELSE false END as is_low_stock
+      FROM inventory_product p
+      LEFT JOIN inventory_category c ON p.category_id = c.id
+      WHERE p.business_id = $1::bigint
+    `;
+    const params = [req.user.business_id];
+    
+    if (search) {
+      query += ` AND (p.name ILIKE $${params.length + 1} OR p.barcode ILIKE $${params.length + 1})`;
+      params.push(`%${search}%`);
+    }
+    
+    if (category) {
+      query += ` AND p.category_id = $${params.length + 1}::bigint`;
+      params.push(category);
+    }
+    
+    if (low_stock === 'true') {
+      query += ` AND p.quantity <= p.reorder_level`;
+    }
+    
+    query += ` ORDER BY p.name`;
+    
+    const result = await pool.query(query, params);
     res.json(result.rows);
   } catch (error) {
     console.error('Get products error:', error);
@@ -45,50 +47,41 @@ router.get('/products', authenticateToken, async (req, res) => {
 });
 
 // Create product
-router.post('/products', authenticateToken, async (req, res) => {
+router.post('/products', authenticateToken, validateProduct, async (req, res) => {
   try {
-    const { name, description, price, cost_price, quantity, sku, category, low_stock_threshold } = req.body;
-    
-    // Get user's business
-    const businessResult = await pool.query(
-      'SELECT id FROM accounts_business WHERE owner_id = $1 LIMIT 1',
-      [req.user.userId]
-    );
-    
-    if (businessResult.rows.length === 0) {
-      return res.status(400).json({ error: 'No business found for user' });
-    }
-    
-    const businessId = businessResult.rows[0].id;
+    const { name, description, price, cost_price, quantity, reorder_level, category_id, barcode, sku } = req.body;
     
     const result = await pool.query(
-      `INSERT INTO inventory_product (name, description, price, cost_price, quantity, sku, 
-                                    low_stock_threshold, business_id, created_at, updated_at) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW()) 
+      `INSERT INTO inventory_product (name, description, price, cost_price, quantity, reorder_level, category_id, barcode, sku, business_id, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7::bigint, $8, $9, $10::bigint, NOW())
        RETURNING *`,
-      [name, description, price, cost_price, quantity, sku, low_stock_threshold, businessId]
+      [name, description, price, cost_price, quantity, reorder_level, category_id, barcode, sku, req.user.business_id]
     );
     
     res.status(201).json(result.rows[0]);
   } catch (error) {
     console.error('Create product error:', error);
-    res.status(500).json({ error: 'Failed to create product' });
+    if (error.code === '23505') {
+      res.status(400).json({ error: 'Product with this barcode or SKU already exists' });
+    } else {
+      res.status(500).json({ error: 'Failed to create product' });
+    }
   }
 });
 
 // Update product
-router.put('/products/:id', authenticateToken, async (req, res) => {
+router.put('/products/:id', authenticateToken, validateProduct, async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, description, price, cost_price, quantity, sku, category, low_stock_threshold } = req.body;
+    const { name, description, price, cost_price, quantity, reorder_level, category_id, barcode, sku } = req.body;
     
     const result = await pool.query(
-      `UPDATE products 
+      `UPDATE inventory_product 
        SET name = $1, description = $2, price = $3, cost_price = $4, quantity = $5, 
-           sku = $6, category = $7, low_stock_threshold = $8, updated_at = NOW()
-       WHERE id = $9 AND user_id = $10 
+           reorder_level = $6, category_id = $7::bigint, barcode = $8, sku = $9
+       WHERE id = $10::bigint AND business_id = $11::bigint
        RETURNING *`,
-      [name, description, price, cost_price, quantity, sku, category, low_stock_threshold, id, req.user.userId]
+      [name, description, price, cost_price, quantity, reorder_level, category_id, barcode, sku, id, req.user.business_id]
     );
     
     if (result.rows.length === 0) {
@@ -108,8 +101,8 @@ router.delete('/products/:id', authenticateToken, async (req, res) => {
     const { id } = req.params;
     
     const result = await pool.query(
-      'DELETE FROM products WHERE id = $1 AND user_id = $2 RETURNING id',
-      [id, req.user.userId]
+      'DELETE FROM inventory_product WHERE id = $1::bigint AND business_id = $2::bigint RETURNING id',
+      [id, req.user.business_id]
     );
     
     if (result.rows.length === 0) {
@@ -123,35 +116,14 @@ router.delete('/products/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// Get low stock products
-router.get('/products/low-stock', authenticateToken, async (req, res) => {
-  try {
-    const result = await pool.query(
-      `SELECT p.id, p.name, p.sku, p.stock_quantity as quantity, p.low_stock_threshold 
-       FROM inventory_product p
-       JOIN accounts_business b ON p.business_id = b.id
-       WHERE b.owner_id = $1 AND p.stock_quantity <= p.low_stock_threshold 
-       ORDER BY p.stock_quantity ASC`,
-      [req.user.userId]
-    );
-    res.json(result.rows);
-  } catch (error) {
-    console.error('Get low stock error:', error);
-    res.status(500).json({ error: 'Failed to fetch low stock products' });
-  }
-});
-
 // Get categories
 router.get('/categories', authenticateToken, async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT c.id, c.name, c.created_at 
-       FROM inventory_category c
-       JOIN accounts_business b ON c.business_id = b.id
-       WHERE b.owner_id = $1
-       ORDER BY c.name`,
-      [req.user.userId]
+      'SELECT * FROM inventory_category WHERE business_id = $1::bigint ORDER BY name',
+      [req.user.business_id]
     );
+    
     res.json(result.rows);
   } catch (error) {
     console.error('Get categories error:', error);

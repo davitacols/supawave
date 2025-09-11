@@ -1,6 +1,6 @@
 const express = require('express');
 const { Pool } = require('pg');
-const jwt = require('jsonwebtoken');
+const { authenticateToken } = require('../middleware/auth');
 const router = express.Router();
 
 const pool = new Pool({
@@ -8,35 +8,22 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
-const authenticateToken = (req, res, next) => {
-  const token = req.headers.authorization?.replace('Bearer ', '');
-  if (!token) {
-    return res.status(401).json({ error: 'No token provided' });
-  }
-  
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
-    req.user = decoded;
-    next();
-  } catch (error) {
-    return res.status(401).json({ error: 'Invalid token' });
-  }
-};
-
 // Get all customers
 router.get('/', authenticateToken, async (req, res) => {
   try {
     const result = await pool.query(
       `SELECT c.*, 
               COUNT(s.id) as total_orders,
-              COALESCE(SUM(s.total), 0) as total_spent
-       FROM customers c
-       LEFT JOIN sales s ON c.id = s.customer_id
-       WHERE c.user_id = $1
+              COALESCE(SUM(s.total_amount), 0) as total_spent,
+              MAX(s.created_at) as last_order_date
+       FROM customers_customer c
+       LEFT JOIN sales_sale s ON c.id = s.customer_id
+       WHERE c.business_id = $1::bigint
        GROUP BY c.id
        ORDER BY c.created_at DESC`,
-      [req.user.userId]
+      [req.user.business_id]
     );
+    
     res.json(result.rows);
   } catch (error) {
     console.error('Get customers error:', error);
@@ -44,15 +31,35 @@ router.get('/', authenticateToken, async (req, res) => {
   }
 });
 
+// Get credit customers
+router.get('/credit', authenticateToken, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT c.*, 
+              COALESCE(c.credit_balance, 0) as credit_balance
+       FROM customers_customer c
+       WHERE c.business_id = $1::bigint AND c.credit_balance > 0
+       ORDER BY c.credit_balance DESC`,
+      [req.user.business_id]
+    );
+    
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Get credit customers error:', error);
+    res.status(500).json({ error: 'Failed to fetch credit customers' });
+  }
+});
+
 // Create customer
 router.post('/', authenticateToken, async (req, res) => {
   try {
-    const { name, email, phone, address } = req.body;
+    const { name, email, phone_number, address, credit_limit } = req.body;
     
     const result = await pool.query(
-      `INSERT INTO customers (name, email, phone, address, user_id, created_at, updated_at) 
-       VALUES ($1, $2, $3, $4, $5, NOW(), NOW()) RETURNING *`,
-      [name, email, phone, address, req.user.userId]
+      `INSERT INTO customers_customer (name, email, phone_number, address, credit_limit, business_id, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6::bigint, NOW())
+       RETURNING *`,
+      [name, email, phone_number, address, credit_limit || 0, req.user.business_id]
     );
     
     res.status(201).json(result.rows[0]);
@@ -66,13 +73,14 @@ router.post('/', authenticateToken, async (req, res) => {
 router.put('/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, email, phone, address } = req.body;
+    const { name, email, phone_number, address, credit_limit } = req.body;
     
     const result = await pool.query(
-      `UPDATE customers 
-       SET name = $1, email = $2, phone = $3, address = $4, updated_at = NOW()
-       WHERE id = $5 AND user_id = $6 RETURNING *`,
-      [name, email, phone, address, id, req.user.userId]
+      `UPDATE customers_customer 
+       SET name = $1, email = $2, phone_number = $3, address = $4, credit_limit = $5
+       WHERE id = $6::bigint AND business_id = $7::bigint
+       RETURNING *`,
+      [name, email, phone_number, address, credit_limit, id, req.user.business_id]
     );
     
     if (result.rows.length === 0) {
@@ -92,8 +100,8 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     const { id } = req.params;
     
     const result = await pool.query(
-      'DELETE FROM customers WHERE id = $1 AND user_id = $2 RETURNING id',
-      [id, req.user.userId]
+      'DELETE FROM customers_customer WHERE id = $1::bigint AND business_id = $2::bigint RETURNING id',
+      [id, req.user.business_id]
     );
     
     if (result.rows.length === 0) {
