@@ -1,6 +1,9 @@
 // import ErrorHandler from './errorHandler'; // Unused for now
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
+console.log('🔗 API Base URL:', API_BASE_URL);
+console.log('🔗 Environment:', process.env.NODE_ENV);
+console.log('🔗 All env vars:', Object.keys(process.env).filter(key => key.startsWith('REACT_APP')));
 
 const apiRequest = async (endpoint, options = {}) => {
   const token = localStorage.getItem('access_token');
