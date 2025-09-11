@@ -35,7 +35,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Middleware
 app.use(requestLogger);
-app.use(apiLimiter);
+// app.use(apiLimiter); // Temporarily disabled for testing
 
 // Routes (temporarily disable auth rate limiting for testing)
 app.use('/api/auth', require('./routes/auth'));

@@ -97,6 +97,7 @@ router.post('/login', async (req, res) => {
     delete user.password;
     
     console.log('✅ Login successful for:', user.email);
+    console.log('🔑 Generated tokens:', tokens);
     
     res.json({
       user,
