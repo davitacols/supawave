@@ -1,0 +1,106 @@
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+require('dotenv').config();
+
+const app = express();
+const PORT = process.env.PORT || 8000;
+
+// Middleware
+app.use(helmet());
+app.use(cors({
+  origin: [
+    'http://localhost:3000',
+    'http://192.168.0.183:3000',
+    'https://frontend-2c9gh9oc3-davitacols-projects.vercel.app',
+    process.env.FRONTEND_URL
+  ].filter(Boolean),
+  credentials: true
+}));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Debug middleware
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.path}`, req.body);
+  
+  // Log response
+  const originalSend = res.send;
+  res.send = function(data) {
+    console.log(`Response for ${req.method} ${req.path}:`, typeof data, data ? data.length || 'object' : 'empty');
+    return originalSend.call(this, data);
+  };
+  
+  next();
+});
+
+// Routes
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/inventory', require('./routes/inventory'));
+app.use('/api/sales', require('./routes/sales'));
+app.use('/api/customers', require('./routes/customers'));
+app.use('/api/analytics', require('./routes/analytics'));
+app.use('/api/notifications', require('./routes/notifications'));
+app.use('/api/marketplace', require('./routes/marketplace'));
+app.use('/api/dashboard', require('./routes/dashboard'));
+app.use('/api/staff', require('./routes/staff'));
+app.use('/api/stores', require('./routes/stores'));
+
+// Health check
+app.get('/', (req, res) => {
+  res.json({ 
+    status: 'ok', 
+    message: 'SupaWave Node.js API is running',
+    version: '1.0.0'
+  });
+});
+
+app.get('/api', (req, res) => {
+  res.json({ 
+    status: 'ok', 
+    message: 'SupaWave API endpoints',
+    endpoints: [
+      '/api/auth/login',
+      '/api/auth/register',
+      '/api/inventory/products',
+      '/api/sales',
+      '/api/customers',
+      '/api/analytics',
+      '/api/notifications',
+      '/api/marketplace'
+    ]
+  });
+});
+
+// Test login endpoint
+app.post('/api/test-login', (req, res) => {
+  console.log('🧪 Test login received:', req.body);
+  res.json({ message: 'Test login endpoint working', body: req.body });
+});
+
+// Test staff endpoint
+app.get('/api/test-staff-simple', (req, res) => {
+  console.log('🧪 Test staff endpoint called');
+  res.json([
+    { id: 1, name: 'Test Staff 1', role: 'manager' },
+    { id: 2, name: 'Test Staff 2', role: 'cashier' }
+  ]);
+});
+
+// Error handling
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ error: 'Something went wrong!' });
+});
+
+// 404 handler
+app.use('*', (req, res) => {
+  res.status(404).json({ error: 'Route not found' });
+});
+
+app.listen(PORT, () => {
+  console.log(`🚀 SupaWave API running on port ${PORT}`);
+  console.log(`📊 Health check: http://localhost:${PORT}/`);
+  console.log(`🔗 API endpoints: http://localhost:${PORT}/api`);
+  console.log(`🌐 Server accessible on both localhost and network IP`);
+});

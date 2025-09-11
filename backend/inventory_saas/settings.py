@@ -216,18 +216,19 @@ SIMPLE_JWT = {
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+    "https://frontend-buqtfpj3v-davitacols-projects.vercel.app",
     config('FRONTEND_URL', default='http://localhost:3000'),
 ]
 
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOW_ALL_ORIGINS = DEBUG
+CORS_ALLOW_ALL_ORIGINS = True
 
 # Add your production domain to ALLOWED_HOSTS
 if not DEBUG:
     ALLOWED_HOSTS.extend([
         config('BACKEND_DOMAIN', default=''),
-        '.onrender.com',
         '.railway.app',
+        '.onrender.com',
         '.vercel.app'
     ])
 CORS_ALLOWED_HEADERS = [

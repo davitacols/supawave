@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authAPI } from '../utils/api';
+import { debugAPI } from '../utils/debug';
 import { EyeIcon, EyeSlashIcon, EnvelopeIcon, LockClosedIcon } from '@heroicons/react/24/outline';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -18,13 +19,26 @@ const Login = () => {
     setLoading(true);
     setError('');
 
+    // Debug API URL
+    console.log('API URL:', debugAPI());
+    console.log('Login attempt with:', { email: formData.email, password: formData.password ? '***' : 'missing' });
+
     try {
       const response = await authAPI.login(formData);
-      localStorage.setItem('access_token', response.data.tokens.access);
-      localStorage.setItem('refresh_token', response.data.tokens.refresh);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
-      navigate('/');
+      console.log('✅ Login response:', response);
+      
+      if (response.data && response.data.tokens) {
+        localStorage.setItem('access_token', response.data.tokens.access);
+        localStorage.setItem('refresh_token', response.data.tokens.refresh);
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+        console.log('✅ Tokens stored, navigating to dashboard');
+        navigate('/');
+      } else {
+        console.error('❌ Invalid response format:', response);
+        setError('Login failed - invalid response format');
+      }
     } catch (error) {
+      console.error('❌ Login error:', error);
       setError('Invalid email or password. Please try again.');
     } finally {
       setLoading(false);

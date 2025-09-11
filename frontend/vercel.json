@@ -21,8 +21,11 @@
       "dest": "/index.html"
     }
   ],
-  "env": {
-    "REACT_APP_API_URL": "@react_app_api_url",
-    "REACT_APP_PAYSTACK_PUBLIC_KEY": "@react_app_paystack_public_key"
+  "build": {
+    "env": {
+      "CI": "false",
+      "REACT_APP_API_URL": "http://localhost:8000/api",
+      "REACT_APP_PAYSTACK_PUBLIC_KEY": "pk_test_bd4b7f52afbcf7cf0fa68951c5b7c7dfafbf377d"
+    }
   }
 }

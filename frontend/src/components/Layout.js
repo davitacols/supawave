@@ -29,11 +29,27 @@ const Layout = ({ children }) => {
 
   const fetchBusiness = async () => {
     try {
+      const token = localStorage.getItem('access_token');
+      console.log('🔑 Token exists:', !!token);
+      
+      if (!token) {
+        console.log('❌ No token found, redirecting to login');
+        navigate('/login');
+        return;
+      }
+      
       const response = await authAPI.getBusiness();
+      console.log('✅ Business data:', response.data);
       setBusiness(response.data);
     } catch (error) {
       console.error('Error fetching business:', error);
-      setBusiness({ name: 'Store' }); // Fallback
+      if (error.message.includes('401')) {
+        console.log('🔄 Token expired, redirecting to login');
+        localStorage.clear();
+        navigate('/login');
+      } else {
+        setBusiness({ name: 'Store' }); // Fallback
+      }
     }
   };
 
@@ -195,11 +211,11 @@ const Layout = ({ children }) => {
               sidebarCollapsed ? 'justify-center' : 'space-x-3'
             }`}>
               <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center text-gray-600 font-medium text-sm">
-                {business?.name?.charAt(0) || 'S'}
+                {(business?.business_name || business?.name)?.charAt(0) || 'S'}
               </div>
               {!sidebarCollapsed && (
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-900 truncate">{business?.name || 'Store Name'}</p>
+                  <p className="text-sm font-semibold text-gray-900 truncate">{business?.business_name || business?.name || 'Store Name'}</p>
                   <div className="flex items-center mt-1">
                     <span className={`text-xs px-2 py-0.5 rounded ${
                       business?.subscription_status === 'active' ? 'bg-green-100 text-green-700' :
@@ -349,10 +365,10 @@ const Layout = ({ children }) => {
             <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-100 bg-gray-50">
               <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 transition-colors">
                 <div className="w-10 h-10 bg-sky-100 rounded-full flex items-center justify-center text-sky-600 font-medium text-sm">
-                  {business?.name?.charAt(0) || 'S'}
+                  {(business?.business_name || business?.name)?.charAt(0) || 'S'}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">{business?.name || 'Store Name'}</p>
+                  <p className="text-sm font-medium text-gray-900 truncate">{business?.business_name || business?.name || 'Store Name'}</p>
                   <div className="flex items-center space-x-2">
                     <span className={`text-xs px-2 py-0.5 rounded ${
                       business?.subscription_status === 'active' ? 'bg-green-100 text-green-700' :
