@@ -2,9 +2,28 @@
 
 const API_BASE_URL = 'https://supawave-backend-b77auzq28-davitacols-projects.vercel.app/api';
 console.log('🔗 API Base URL:', API_BASE_URL);
-console.log('🔗 Environment:', process.env.NODE_ENV);
-console.log('🔗 REACT_APP_API_URL value:', process.env.REACT_APP_API_URL);
-console.log('🔗 All env vars:', Object.keys(process.env).filter(key => key.startsWith('REACT_APP')));
+
+// Clear expired tokens on app load
+if (typeof window !== 'undefined') {
+  const token = localStorage.getItem('access_token');
+  if (token) {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const isExpired = payload.exp * 1000 < Date.now();
+      if (isExpired) {
+        console.log('🔄 Clearing expired token');
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        localStorage.removeItem('user');
+      }
+    } catch (e) {
+      console.log('🔄 Clearing invalid token');
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      localStorage.removeItem('user');
+    }
+  }
+}
 
 const apiRequest = async (endpoint, options = {}) => {
   const token = localStorage.getItem('access_token');
