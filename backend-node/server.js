@@ -39,6 +39,18 @@ app.use(requestLogger);
 
 // Routes (temporarily disable auth rate limiting for testing)
 app.use('/api/auth', require('./routes/auth'));
+
+// Simple debug endpoint
+app.get('/api/debug', (req, res) => {
+  res.json({
+    message: 'Backend is working',
+    timestamp: new Date().toISOString(),
+    env: {
+      JWT_SECRET_EXISTS: !!process.env.JWT_SECRET,
+      DATABASE_URL_EXISTS: !!process.env.DATABASE_URL
+    }
+  });
+});
 app.use('/api/inventory', require('./routes/inventory'));
 app.use('/api/sales', require('./routes/sales'));
 app.use('/api/customers', require('./routes/customers'));
