@@ -51,7 +51,7 @@ PAYSTACK_PUBLIC_KEY=pk_test_bd4b7f52afbcf7cf0fa68951c5b7c7dfafbf377d
 AWS_ACCESS_KEY_ID=AKIAUHPTTS4ANMYEME73
 AWS_SECRET_ACCESS_KEY=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
 AWS_STORAGE_BUCKET_NAME=supawave-products
-CLAUDE_API_KEY=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
+CLAUDE_API_KEY=your_claude_api_key_here
 ```
 
 ### 6. Run Migrations

@@ -48,7 +48,7 @@ PAYSTACK_SECRET_KEY=sk_test_9a70a63f5c3d1b7b12f6c3165b1e2206ca1810a4
 PAYSTACK_PUBLIC_KEY=pk_test_bd4b7f52afbcf7cf0fa68951c5b7c7dfafbf377d
 AWS_ACCESS_KEY_ID=AKIAUHPTTS4ANMYEME73
 AWS_SECRET_ACCESS_KEY=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
-CLAUDE_API_KEY=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
+CLAUDE_API_KEY=your_claude_api_key_here
 
 # Frontend URL (update after deployment)
 FRONTEND_URL=https://your-frontend.vercel.app
