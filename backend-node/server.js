@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const { requestLogger, errorLogger } = require('./middleware/logger');
+const { apiLimiter, authLimiter } = require('./middleware/rateLimiter');
 require('dotenv').config();
 
 const app = express();
@@ -31,22 +33,12 @@ app.use((req, res, next) => {
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Debug middleware
-app.use((req, res, next) => {
-  console.log(`${req.method} ${req.path}`, req.body);
-  
-  // Log response
-  const originalSend = res.send;
-  res.send = function(data) {
-    console.log(`Response for ${req.method} ${req.path}:`, typeof data, data ? data.length || 'object' : 'empty');
-    return originalSend.call(this, data);
-  };
-  
-  next();
-});
+// Middleware
+app.use(requestLogger);
+app.use(apiLimiter);
 
-// Routes
-app.use('/api/auth', require('./routes/auth'));
+// Routes with specific rate limiting
+app.use('/api/auth', authLimiter, require('./routes/auth'));
 app.use('/api/inventory', require('./routes/inventory'));
 app.use('/api/sales', require('./routes/sales'));
 app.use('/api/customers', require('./routes/customers'));
@@ -99,9 +91,13 @@ app.get('/api/test-staff-simple', (req, res) => {
 });
 
 // Error handling
+app.use(errorLogger);
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ error: 'Something went wrong!' });
+  res.status(err.status || 500).json({ 
+    error: process.env.NODE_ENV === 'production' 
+      ? 'Something went wrong!' 
+      : err.message 
+  });
 });
 
 // 404 handler

@@ -1,7 +1,8 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
 const { Pool } = require('pg');
+const { generateTokenPair, verifyRefreshToken } = require('../utils/tokenGenerator');
+const { authenticateToken } = require('../middleware/auth');
 const router = express.Router();
 
 // Database connection
@@ -28,24 +29,11 @@ router.post('/register', async (req, res) => {
     const user = userResult.rows[0];
     
     // Generate JWT tokens
-    const accessToken = jwt.sign(
-      { userId: user.id, email: user.email },
-      process.env.JWT_SECRET || 'your-secret-key',
-      { expiresIn: '24h' }
-    );
-    
-    const refreshToken = jwt.sign(
-      { userId: user.id },
-      process.env.JWT_SECRET || 'your-secret-key',
-      { expiresIn: '7d' }
-    );
+    const tokens = generateTokenPair(user);
     
     res.status(201).json({
       user,
-      tokens: {
-        access: accessToken,
-        refresh: refreshToken
-      }
+      tokens
     });
   } catch (error) {
     console.error('Registration error:', error);
@@ -103,17 +91,7 @@ router.post('/login', async (req, res) => {
     }
     
     // Generate JWT tokens
-    const accessToken = jwt.sign(
-      { userId: user.id, email: user.email },
-      process.env.JWT_SECRET || 'your-secret-key',
-      { expiresIn: '24h' }
-    );
-    
-    const refreshToken = jwt.sign(
-      { userId: user.id },
-      process.env.JWT_SECRET || 'your-secret-key',
-      { expiresIn: '7d' }
-    );
+    const tokens = generateTokenPair(user);
     
     // Remove password from response
     delete user.password;
@@ -122,10 +100,7 @@ router.post('/login', async (req, res) => {
     
     res.json({
       user,
-      tokens: {
-        access: accessToken,
-        refresh: refreshToken
-      }
+      tokens
     });
   } catch (error) {
     console.error('Login error:', error);
@@ -226,6 +201,40 @@ router.get('/test-staff', async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+// Refresh token endpoint
+router.post('/refresh', async (req, res) => {
+  try {
+    const { refresh } = req.body;
+    
+    if (!refresh) {
+      return res.status(401).json({ error: 'Refresh token required' });
+    }
+    
+    // Verify refresh token
+    const decoded = verifyRefreshToken(refresh);
+    
+    // Get user from database
+    const userResult = await pool.query(
+      'SELECT id, username, email, role, business_id FROM accounts_user WHERE id = $1::bigint',
+      [decoded.userId]
+    );
+    
+    if (userResult.rows.length === 0) {
+      return res.status(401).json({ error: 'User not found' });
+    }
+    
+    const user = userResult.rows[0];
+    
+    // Generate new token pair
+    const tokens = generateTokenPair(user);
+    
+    res.json({ tokens });
+  } catch (error) {
+    console.error('Token refresh error:', error);
+    res.status(401).json({ error: 'Invalid refresh token' });
   }
 });
 

@@ -1,6 +1,7 @@
 const express = require('express');
-const jwt = require('jsonwebtoken');
 const { Pool } = require('pg');
+const { authenticateToken, requireRole } = require('../middleware/auth');
+const { validateStaff } = require('../middleware/validation');
 require('dotenv').config();
 const router = express.Router();
 
@@ -9,21 +10,6 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
 });
-
-const authenticateToken = (req, res, next) => {
-  const token = req.headers.authorization?.replace('Bearer ', '');
-  if (!token) {
-    return res.status(401).json({ error: 'No token provided' });
-  }
-  
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
-    req.user = decoded;
-    next();
-  } catch (error) {
-    return res.status(401).json({ error: 'Invalid token' });
-  }
-};
 
 // Get all staff
 router.get('/', authenticateToken, async (req, res) => {
@@ -59,13 +45,30 @@ router.get('/', authenticateToken, async (req, res) => {
   }
 });
 
-// Create staff
-router.post('/', authenticateToken, async (req, res) => {
+// Create staff (only owners and managers)
+router.post('/', authenticateToken, requireRole(['owner', 'manager']), validateStaff, async (req, res) => {
   try {
-    res.status(201).json({ message: 'Staff created successfully' });
+    const { username, email, first_name, last_name, role, phone_number } = req.body;
+    
+    // Create staff member
+    const staffResult = await pool.query(
+      `INSERT INTO accounts_user (username, email, first_name, last_name, role, phone_number, business_id, is_active_staff)
+       VALUES ($1, $2, $3, $4, $5, $6, $7::bigint, true)
+       RETURNING id, username, first_name, last_name, email, role`,
+      [username, email, first_name, last_name, role, phone_number, req.user.business_id]
+    );
+    
+    res.status(201).json({
+      message: 'Staff created successfully',
+      staff: staffResult.rows[0]
+    });
   } catch (error) {
     console.error('Create staff error:', error);
-    res.status(500).json({ error: 'Failed to create staff' });
+    if (error.code === '23505') {
+      res.status(400).json({ error: 'Username or email already exists' });
+    } else {
+      res.status(500).json({ error: 'Failed to create staff' });
+    }
   }
 });
 
