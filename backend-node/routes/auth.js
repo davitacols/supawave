@@ -139,20 +139,14 @@ router.delete('/staff/:id', async (req, res) => {
 });
 
 // Get staff - matching Django implementation
-router.get('/staff', async (req, res) => {
+router.get('/staff', authenticateToken, async (req, res) => {
   try {
-    const token = req.headers.authorization?.replace('Bearer ', '');
-    if (!token) {
-      return res.status(401).json({ error: 'No token provided' });
-    }
-    
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
-    console.log('👥 Getting staff for user:', decoded.userId);
+    console.log('👥 Getting staff for user:', req.user.id);
     
     // Get user's business ID
     const businessResult = await pool.query(
       'SELECT id FROM accounts_business WHERE owner_id = $1::bigint',
-      [decoded.userId]
+      [req.user.id]
     );
     
     if (businessResult.rows.length === 0) {
@@ -173,14 +167,12 @@ router.get('/staff', async (req, res) => {
     );
     
     console.log('👥 Found staff:', staffResult.rows.length);
-    console.log('📋 Staff data:', JSON.stringify(staffResult.rows, null, 2));
     
-    // Ensure proper response
     res.status(200).json(staffResult.rows);
     console.log('✅ Staff response sent successfully');
   } catch (error) {
     console.error('Staff error:', error);
-    res.status(401).json({ error: 'Invalid token' });
+    res.status(500).json({ error: 'Failed to fetch staff' });
   }
 });
 
@@ -239,14 +231,8 @@ router.post('/refresh', async (req, res) => {
 });
 
 // Get business info
-router.get('/business', async (req, res) => {
+router.get('/business', authenticateToken, async (req, res) => {
   try {
-    const token = req.headers.authorization?.replace('Bearer ', '');
-    if (!token) {
-      return res.status(401).json({ error: 'No token provided' });
-    }
-    
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
     const userResult = await pool.query(
       `SELECT u.id, u.username, u.email, u.first_name, u.last_name, u.phone_number, 
               b.name as business_name, b.registration_date,
@@ -258,7 +244,7 @@ router.get('/business', async (req, res) => {
        FROM accounts_user u 
        LEFT JOIN accounts_business b ON u.id = b.owner_id 
        WHERE u.id = $1`,
-      [decoded.userId]
+      [req.user.id]
     );
     
     if (userResult.rows.length === 0) {
@@ -270,7 +256,7 @@ router.get('/business', async (req, res) => {
     res.json(businessInfo);
   } catch (error) {
     console.error('Business info error:', error);
-    res.status(401).json({ error: 'Invalid token' });
+    res.status(500).json({ error: 'Failed to fetch business info' });
   }
 });
 
