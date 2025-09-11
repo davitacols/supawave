@@ -4,6 +4,9 @@ const crypto = require('crypto');
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'your-refresh-secret-key';
 
+console.log('🔑 JWT_SECRET exists:', !!process.env.JWT_SECRET);
+console.log('🔑 Using JWT_SECRET:', JWT_SECRET.substring(0, 10) + '...');
+
 // Generate access token (short-lived)
 const generateAccessToken = (user) => {
   const payload = {

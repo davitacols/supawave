@@ -260,4 +260,28 @@ router.get('/business', authenticateToken, async (req, res) => {
   }
 });
 
+// Test token generation endpoint
+router.get('/test-token', async (req, res) => {
+  try {
+    const testUser = {
+      id: '123',
+      email: 'test@example.com',
+      role: 'owner',
+      business_id: '456'
+    };
+    
+    const { generateTokenPair } = require('../utils/tokenGenerator');
+    const tokens = generateTokenPair(testUser);
+    
+    res.json({
+      message: 'Token generated successfully',
+      tokens,
+      user: testUser
+    });
+  } catch (error) {
+    console.error('Test token error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;
