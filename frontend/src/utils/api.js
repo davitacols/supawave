@@ -1,6 +1,6 @@
 // import ErrorHandler from './errorHandler'; // Unused for now
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://supawave-backend-b77auzq28-davitacols-projects.vercel.app/api';
+const API_BASE_URL = 'https://supawave-backend-b77auzq28-davitacols-projects.vercel.app/api';
 console.log('🔗 API Base URL:', API_BASE_URL);
 console.log('🔗 Environment:', process.env.NODE_ENV);
 console.log('🔗 REACT_APP_API_URL value:', process.env.REACT_APP_API_URL);
