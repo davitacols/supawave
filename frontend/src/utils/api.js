@@ -3,6 +3,22 @@
 const API_BASE_URL = 'https://supawave-backend-b77auzq28-davitacols-projects.vercel.app/api';
 console.log('🔗 API Base URL:', API_BASE_URL);
 
+// Debug token on app load
+if (typeof window !== 'undefined') {
+  const token = localStorage.getItem('access_token');
+  if (token) {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      console.log('🔑 Token payload:', payload);
+      console.log('🔑 Token expires at:', new Date(payload.exp * 1000));
+      console.log('🔑 Current time:', new Date());
+      console.log('🔑 Token valid for:', Math.round((payload.exp * 1000 - Date.now()) / 1000 / 60), 'minutes');
+    } catch (e) {
+      console.log('🔑 Invalid token format');
+    }
+  }
+}
+
 // Clear expired tokens on app load
 if (typeof window !== 'undefined') {
   const token = localStorage.getItem('access_token');

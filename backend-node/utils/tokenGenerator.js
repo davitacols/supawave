@@ -14,7 +14,7 @@ const generateAccessToken = (user) => {
   };
 
   return jwt.sign(payload, JWT_SECRET, {
-    expiresIn: '15m', // 15 minutes
+    expiresIn: '24h', // 24 hours for testing
     issuer: 'supawave-api',
     audience: 'supawave-client'
   });
@@ -39,7 +39,7 @@ const generateTokenPair = (user) => {
   return {
     access: generateAccessToken(user),
     refresh: generateRefreshToken(user),
-    expiresIn: 900 // 15 minutes in seconds
+    expiresIn: 86400 // 24 hours in seconds
   };
 };
 
