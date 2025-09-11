@@ -3,6 +3,7 @@
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
 console.log('🔗 API Base URL:', API_BASE_URL);
 console.log('🔗 Environment:', process.env.NODE_ENV);
+console.log('🔗 REACT_APP_API_URL value:', process.env.REACT_APP_API_URL);
 console.log('🔗 All env vars:', Object.keys(process.env).filter(key => key.startsWith('REACT_APP')));
 
 const apiRequest = async (endpoint, options = {}) => {
