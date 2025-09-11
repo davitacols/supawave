@@ -1,4 +1,0 @@
-#!/bin/bash
-python manage.py migrate --noinput
-python manage.py collectstatic --noinput
-gunicorn --bind 0.0.0.0:$PORT inventory_saas.wsgi:application
