@@ -27,7 +27,7 @@ const NotificationBell = () => {
         }
       });
       const data = await response.json();
-      const notificationList = data.results || data || [];
+      const notificationList = Array.isArray(data) ? data : (data.results || []);
       setNotifications(notificationList);
       setUnreadCount(notificationList.filter(n => !n.is_read).length);
     } catch (error) {
