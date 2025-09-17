@@ -24,7 +24,7 @@ const validateSale = (req, res, next) => {
   }
   
   for (const item of items) {
-    if (!item.product_id || !item.quantity || item.quantity <= 0) {
+    if ((!item.product_id && !item.product) || !item.quantity || item.quantity <= 0) {
       return res.status(400).json({ error: 'Invalid item in sale' });
     }
   }

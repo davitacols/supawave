@@ -13,20 +13,46 @@ const pool = new Pool({
 
 // Register
 router.post('/register', async (req, res) => {
+  const client = await pool.connect();
+  
   try {
+    await client.query('BEGIN');
+    
     const { business_name, username, email, password, first_name, last_name, phone_number } = req.body;
     
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
     
-    // Create user in Django accounts_user table
-    const userResult = await pool.query(
-      `INSERT INTO accounts_user (username, email, password, first_name, last_name, phone_number, date_joined, is_active, is_staff, is_superuser) 
-       VALUES ($1, $2, $3, $4, $5, $6, NOW(), true, false, false) RETURNING id, username, email, first_name, last_name`,
+    // Create user first without business_id
+    const userResult = await client.query(
+      `INSERT INTO accounts_user (username, email, password, first_name, last_name, phone_number, 
+                                  date_joined, is_active, is_staff, is_superuser, role, is_active_staff) 
+       VALUES ($1, $2, $3, $4, $5, $6, NOW(), true, false, false, 'owner', true) 
+       RETURNING id, username, email, first_name, last_name, role`,
       [username, email, hashedPassword, first_name, last_name, phone_number]
     );
     
     const user = userResult.rows[0];
+    
+    // Create business with owner_id
+    const businessResult = await client.query(
+      `INSERT INTO accounts_business (name, registration_date, trial_end_date, is_active, email, owner_id, address, phone, primary_color, secondary_color) 
+       VALUES ($1, NOW(), NOW() + INTERVAL '14 days', true, $2, $3, '', '', '#232F3E', '#FF9900') RETURNING id`,
+      [business_name, email, user.id]
+    );
+    
+    const businessId = businessResult.rows[0].id;
+    
+    // Update user with business_id
+    await client.query(
+      'UPDATE accounts_user SET business_id = $1 WHERE id = $2',
+      [businessId, user.id]
+    );
+    
+    // Add business_id to user object for token generation
+    user.business_id = businessId;
+    
+    await client.query('COMMIT');
     
     // Generate JWT tokens
     const tokens = generateTokenPair(user);
@@ -36,11 +62,14 @@ router.post('/register', async (req, res) => {
       tokens
     });
   } catch (error) {
+    await client.query('ROLLBACK');
     console.error('Registration error:', error);
     if (error.code === '23505') { // Unique constraint violation
       return res.status(400).json({ error: 'Email or username already exists' });
     }
     res.status(500).json({ error: 'Registration failed' });
+  } finally {
+    client.release();
   }
 });
 
@@ -50,9 +79,9 @@ router.post('/login', async (req, res) => {
     const { email, password } = req.body;
     console.log('🔐 Login attempt:', { email, password: password ? '***' : 'missing' });
     
-    // Find user in Django accounts_user table
+    // Find user in accounts_user table
     const userResult = await pool.query(
-      'SELECT * FROM accounts_user WHERE email = $1',
+      'SELECT id, username, email, password, first_name, last_name, business_id, role FROM accounts_user WHERE email = $1',
       [email]
     );
     
@@ -64,7 +93,7 @@ router.post('/login', async (req, res) => {
     }
     
     const user = userResult.rows[0];
-    console.log('✅ User found:', user.email);
+    console.log('✅ User found:', user.email, 'Business ID:', user.business_id);
     
     // Django uses pbkdf2_sha256 hashing, let's check if it's a Django hash
     if (user.password.startsWith('pbkdf2_sha256$')) {
@@ -238,12 +267,12 @@ router.get('/business', authenticateToken, async (req, res) => {
       `SELECT u.id, u.username, u.email, u.first_name, u.last_name, u.phone_number, 
               b.name as business_name, b.registration_date,
               CASE 
-                WHEN NOW() - b.registration_date <= INTERVAL '14 days' THEN 'trial'
+                WHEN NOW() <= b.trial_end_date THEN 'trial'
                 ELSE 'expired'
               END as subscription_status,
-              GREATEST(0, 14 - EXTRACT(days FROM NOW() - b.registration_date)::int) as trial_days_left
+              GREATEST(0, EXTRACT(days FROM b.trial_end_date - NOW())::int) as trial_days_left
        FROM accounts_user u 
-       LEFT JOIN accounts_business b ON u.id = b.owner_id 
+       LEFT JOIN accounts_business b ON u.business_id = b.id 
        WHERE u.id = $1`,
       [req.user.id]
     );

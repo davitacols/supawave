@@ -1,8 +1,12 @@
 const express = require('express');
 const { Pool } = require('pg');
+const { v4: uuidv4 } = require('uuid');
+const multer = require('multer');
 const { authenticateToken } = require('../middleware/auth');
 const { validateProduct } = require('../middleware/validation');
 const router = express.Router();
+
+const upload = multer({ dest: 'uploads/' });
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -78,15 +82,42 @@ router.get('/products', authenticateToken, async (req, res) => {
 });
 
 // Create product
-router.post('/products', authenticateToken, async (req, res) => {
+router.post('/products', authenticateToken, upload.single('image'), async (req, res) => {
   try {
-    const { name, description, price, cost_price, quantity, reorder_level, category_id, barcode, sku } = req.body;
+    console.log('📦 Create product request body:', req.body);
+    
+    // Handle both JSON and FormData
+    const name = req.body.name;
+    const selling_price = req.body.selling_price;
+    const cost_price = req.body.cost_price;
+    const stock_quantity = req.body.stock_quantity;
+    const low_stock_threshold = req.body.low_stock_threshold;
+    const category = req.body.category;
+    const supplier = req.body.supplier;
+    const sku = req.body.sku;
+    
+    if (!name) {
+      return res.status(400).json({ error: 'Product name is required' });
+    }
+    
+    // Generate UUID for id
+    const productId = uuidv4();
+    
+    // Generate SKU if not provided
+    const finalSku = sku || `SKU-${Date.now()}`;
+    
+    // Generate barcode if not provided (13 digits max)
+    const barcode = Math.floor(Math.random() * 10000000000000).toString().padStart(13, '0');
     
     const result = await pool.query(
-      `INSERT INTO inventory_product (name, cost_price, selling_price, stock_quantity, low_stock_threshold, category_id, barcode, sku, business_id, created_at)
-       VALUES ($1, $2, $3, $4, $5, $6::uuid, $7, $8, $9::bigint, NOW())
+      `INSERT INTO inventory_product (id, name, sku, barcode, cost_price, selling_price, stock_quantity, 
+                                      low_stock_threshold, reorder_point, max_stock, is_active, 
+                                      created_at, updated_at, business_id, category_id, supplier_id)
+       VALUES ($1::uuid, $2, $3, $4, $5, $6, $7, $8, $9, $10, true, NOW(), NOW(), $11::bigint, $12::uuid, $13::uuid)
        RETURNING *`,
-      [name, cost_price, price, quantity, reorder_level, category_id, barcode, sku, req.user.business_id]
+      [productId, name, finalSku, barcode, cost_price, selling_price, stock_quantity, 
+       low_stock_threshold || 10, low_stock_threshold || 5, 1000, req.user.business_id, 
+       category || null, supplier || null]
     );
     
     res.status(201).json(result.rows[0]);
@@ -373,6 +404,28 @@ router.get('/alerts/recommendations', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('Get recommendations error:', error);
     res.status(500).json({ error: 'Failed to fetch recommendations' });
+  }
+});
+
+// Generate alerts
+router.post('/alerts/generate_alerts', authenticateToken, async (req, res) => {
+  try {
+    // For now, just return success - alerts are generated automatically by the GET /alerts endpoint
+    res.json({ message: 'Alerts generated successfully' });
+  } catch (error) {
+    console.error('Generate alerts error:', error);
+    res.status(500).json({ error: 'Failed to generate alerts' });
+  }
+});
+
+// Dismiss alert
+router.post('/alerts/:id/dismiss', authenticateToken, async (req, res) => {
+  try {
+    // For now, just return success
+    res.json({ message: 'Alert dismissed successfully' });
+  } catch (error) {
+    console.error('Dismiss alert error:', error);
+    res.status(500).json({ error: 'Failed to dismiss alert' });
   }
 });
 

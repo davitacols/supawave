@@ -1,27 +1,12 @@
 const express = require('express');
-const jwt = require('jsonwebtoken');
 const { Pool } = require('pg');
+const { authenticateToken } = require('../middleware/auth');
 const router = express.Router();
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
 });
-
-const authenticateToken = (req, res, next) => {
-  const token = req.headers.authorization?.replace('Bearer ', '');
-  if (!token) {
-    return res.status(401).json({ error: 'No token provided' });
-  }
-  
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
-    req.user = decoded;
-    next();
-  } catch (error) {
-    return res.status(401).json({ error: 'Invalid token' });
-  }
-};
 
 // Public dashboard stats for testing
 router.get('/stats-public', async (req, res) => {
@@ -71,6 +56,13 @@ router.get('/stats-public', async (req, res) => {
 router.get('/stats', authenticateToken, async (req, res) => {
   try {
     const businessId = req.user.business_id;
+    console.log('📊 Dashboard request for business:', businessId);
+    console.log('📊 User object:', req.user);
+    
+    // Test query to verify business ID
+    const testQuery = await pool.query('SELECT COUNT(*) as count FROM sales_sale WHERE business_id = $1::bigint', [businessId]);
+    console.log('📊 Sales count for this business:', testQuery.rows[0].count);
+    
     const today = new Date().toISOString().split('T')[0];
     const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
     const monthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
@@ -121,6 +113,8 @@ router.get('/stats', authenticateToken, async (req, res) => {
       [businessId]
     );
     
+    console.log('📊 Recent sales found:', recentSalesResult.rows.length);
+    
     // Top products (by sales volume)
     const topProductsResult = await pool.query(
       `SELECT p.name, COUNT(si.id) as sales_count, SUM(si.quantity) as total_quantity
@@ -133,6 +127,8 @@ router.get('/stats', authenticateToken, async (req, res) => {
       [businessId, monthAgo]
     );
     
+    console.log('📊 Top products found:', topProductsResult.rows.length);
+    
     // Sales trend (last 7 days)
     const salesTrendResult = await pool.query(
       `SELECT DATE(created_at) as date, COUNT(*) as sales, SUM(total_amount) as revenue
@@ -142,6 +138,9 @@ router.get('/stats', authenticateToken, async (req, res) => {
        ORDER BY date`,
       [businessId, weekAgo]
     );
+    
+    console.log('📊 Sales trend found:', salesTrendResult.rows.length, 'days');
+    console.log('📊 Monthly stats:', monthlyResult.rows[0]);
     
     res.json({
       todayStats: {

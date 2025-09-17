@@ -219,5 +219,9 @@ export const reportsAPI = {
   exportYearlyCSV: (year) => `/reports/export/yearly/?year=${year}`,
 };
 
+export const dashboardAPI = {
+  getStats: () => api.get('/dashboard/stats'),
+};
+
 export { api };
 export default api;

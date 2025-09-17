@@ -35,48 +35,33 @@ router.post('/', authenticateToken, validateSale, async (req, res) => {
   try {
     await client.query('BEGIN');
     
-    const { items, customer_id, customer_name, payment_method, discount = 0 } = req.body;
-    
-    // Calculate totals
-    let subtotal = 0;
-    for (const item of items) {
-      const productResult = await client.query(
-        'SELECT price FROM inventory_product WHERE id = $1::bigint AND business_id = $2::bigint',
-        [item.product_id, req.user.business_id]
-      );
-      
-      if (productResult.rows.length === 0) {
-        throw new Error(`Product ${item.product_id} not found`);
-      }
-      
-      subtotal += productResult.rows[0].price * item.quantity;
-    }
-    
-    const total_amount = subtotal - discount;
+    const { items, customer_phone, total_amount } = req.body;
     
     // Create sale
     const saleResult = await client.query(
-      `INSERT INTO sales_sale (business_id, customer_id, customer_name, subtotal, discount, total_amount, payment_method, created_at)
-       VALUES ($1::bigint, $2::bigint, $3, $4, $5, $6, $7, NOW())
+      `INSERT INTO sales_sale (business_id, customer_phone, total_amount, created_at)
+       VALUES ($1::bigint, $2, $3, NOW())
        RETURNING *`,
-      [req.user.business_id, customer_id, customer_name, subtotal, discount, total_amount, payment_method]
+      [req.user.business_id, customer_phone || null, parseFloat(total_amount)]
     );
     
     const sale = saleResult.rows[0];
     
     // Create sale items and update inventory
     for (const item of items) {
+      const productId = item.product_id || item.product;
+      
       // Create sale item
       await client.query(
-        `INSERT INTO sales_saleitem (sale_id, product_id, quantity, unit_price, subtotal)
-         VALUES ($1::bigint, $2::bigint, $3, $4, $5)`,
-        [sale.id, item.product_id, item.quantity, item.unit_price, item.quantity * item.unit_price]
+        `INSERT INTO sales_saleitem (sale_id, product_id, quantity, unit_price, total_price)
+         VALUES ($1::bigint, $2::uuid, $3, $4, $5)`,
+        [sale.id, productId, item.quantity, item.unit_price, parseFloat(item.unit_price) * parseInt(item.quantity)]
       );
       
       // Update product quantity
       await client.query(
-        'UPDATE inventory_product SET quantity = quantity - $1 WHERE id = $2::bigint AND business_id = $3::bigint',
-        [item.quantity, item.product_id, req.user.business_id]
+        'UPDATE inventory_product SET stock_quantity = stock_quantity - $1 WHERE id = $2::uuid AND business_id = $3::bigint',
+        [item.quantity, productId, req.user.business_id]
       );
     }
     

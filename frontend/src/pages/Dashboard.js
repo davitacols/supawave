@@ -6,7 +6,7 @@ import {
   ArrowTrendingUpIcon, ArrowTrendingDownIcon, ExclamationTriangleIcon,
   ChartBarIcon, ClockIcon, ServerIcon
 } from '@heroicons/react/24/outline';
-import { salesAPI, analyticsAPI, inventoryAPI, authAPI } from '../utils/api';
+import { salesAPI, analyticsAPI, inventoryAPI, authAPI, dashboardAPI } from '../utils/api';
 import OnboardingTour from '../components/OnboardingTour';
 
 const Dashboard = () => {
@@ -46,34 +46,40 @@ const Dashboard = () => {
     try {
       const user = JSON.parse(localStorage.getItem('user') || '{}');
       
-      const [analyticsRes, quickStatsRes, salesRes, lowStockRes] = await Promise.all([
-        salesAPI.getAnalytics().catch(err => ({ data: { monthly_revenue: 0, monthly_sales_count: 0, daily_revenue: [], top_products: [] } })),
-        analyticsAPI.getQuickStats().catch(err => ({ data: { total_products: 0 } })),
-        salesAPI.getSales().catch(err => ({ data: [] })),
+      // Use the new dashboard API
+      const [dashboardRes, lowStockRes] = await Promise.all([
+        dashboardAPI.getStats().catch(err => {
+          console.error('Dashboard API error:', err);
+          return { data: { 
+            monthlyStats: { revenue: 0, sales: 0 },
+            inventory: { totalProducts: 0 },
+            recentSales: [],
+            topProducts: [],
+            salesTrend: []
+          }};
+        }),
         inventoryAPI.getLowStockProducts().catch(err => ({ data: [] }))
       ]);
 
-      const analytics = analyticsRes.data;
-      const quickStats = quickStatsRes.data;
-      const sales = salesRes.data;
+      const dashboard = dashboardRes.data;
       const lowStock = lowStockRes.data;
 
       setStats({
-        revenue: analytics.monthly_revenue || 0,
-        sales: analytics.monthly_sales_count || 0,
-        products: quickStats.total_products || 0,
-        customers: sales.length || 0
+        revenue: dashboard.monthlyStats?.revenue || 0,
+        sales: dashboard.monthlyStats?.sales || 0,
+        products: dashboard.inventory?.totalProducts || 0,
+        customers: dashboard.recentSales?.length || 0
       });
 
-      const formattedSalesData = analytics.daily_revenue?.map(item => ({
+      const formattedSalesData = dashboard.salesTrend?.map(item => ({
         name: new Date(item.date).toLocaleDateString('en-US', { weekday: 'short' }),
-        revenue: item.revenue,
-        sales: Math.floor(item.revenue / 1000)
-      })).reverse() || [];
+        revenue: parseFloat(item.revenue) || 0,
+        sales: parseInt(item.sales) || 0
+      })) || [];
       setSalesData(formattedSalesData);
 
-      setTopProducts(analytics.top_products || []);
-      setRecentSales(sales.slice(0, 5) || []);
+      setTopProducts(dashboard.topProducts || []);
+      setRecentSales(dashboard.recentSales || []);
       setLowStockProducts(lowStock.slice(0, 5) || []);
       
       if (user.role === 'owner') {
