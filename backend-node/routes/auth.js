@@ -290,6 +290,18 @@ router.get('/business', authenticateToken, async (req, res) => {
   }
 });
 
+// Logout endpoint
+router.post('/logout', authenticateToken, async (req, res) => {
+  try {
+    // Since we're using stateless JWT tokens, logout is handled client-side
+    // by removing the tokens from localStorage
+    res.json({ message: 'Logged out successfully' });
+  } catch (error) {
+    console.error('Logout error:', error);
+    res.status(500).json({ error: 'Logout failed' });
+  }
+});
+
 // Test token generation endpoint
 router.get('/test-token', async (req, res) => {
   try {

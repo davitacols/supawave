@@ -97,6 +97,7 @@ const api = {
 export const authAPI = {
   register: (data) => api.post('/auth/register/', data),
   login: (data) => api.post('/auth/login/', data),
+  logout: () => api.post('/auth/logout/'),
   getBusiness: () => api.get('/auth/business/'),
   updateBusiness: (data) => api.put('/auth/business/', data),
   getStaff: () => api.get('/auth/staff/'),

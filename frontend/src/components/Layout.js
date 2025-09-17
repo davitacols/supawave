@@ -114,11 +114,20 @@ const Layout = ({ children }) => {
   
   // const navigation = getNavigation(); // Unused variable
 
-  const handleLogout = () => {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    localStorage.removeItem('user');
-    navigate('/login');
+  const handleLogout = async () => {
+    try {
+      // Call backend logout endpoint
+      await authAPI.logout();
+    } catch (error) {
+      console.error('Logout API error:', error);
+      // Continue with client-side logout even if API fails
+    } finally {
+      // Clear local storage and redirect
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      localStorage.removeItem('user');
+      navigate('/login');
+    }
   };
 
   // Mobile navigation items (most important)
