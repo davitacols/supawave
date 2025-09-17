@@ -17,17 +17,13 @@ const authenticateToken = async (req, res, next) => {
   try {
     const decoded = verifyAccessToken(token);
     
-    // Get user from database
-    const userResult = await pool.query(
-      'SELECT id, username, email, role, business_id FROM accounts_user WHERE id = $1::bigint',
-      [decoded.userId]
-    );
-
-    if (userResult.rows.length === 0) {
-      return res.status(401).json({ error: 'User not found' });
-    }
-
-    req.user = userResult.rows[0];
+    // Use decoded token data directly (no database query for now)
+    req.user = {
+      id: decoded.userId,
+      email: decoded.email,
+      role: decoded.role || 'owner',
+      business_id: decoded.businessId || decoded.userId
+    };
     next();
   } catch (error) {
     console.error('Auth middleware error:', error);

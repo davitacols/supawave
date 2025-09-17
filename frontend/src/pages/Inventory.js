@@ -35,10 +35,31 @@ const Inventory = () => {
         params.append('page_size', '50');
         
         const response = await inventoryAPI.getProducts(params.toString());
-        setProducts(response.data.results || response.data);
-        setTotalProducts(response.data.count || response.data.length);
-        setTotalPages(response.data.total_pages || 1);
-        offlineStorage.saveProducts(response.data.results || response.data);
+        console.log('Products API response:', response);
+        
+        // Handle different response structures
+        let productsData = [];
+        if (response?.data?.products) {
+          productsData = response.data.products;
+          setTotalProducts(response.data.pagination?.total || productsData.length);
+          setTotalPages(response.data.pagination?.pages || 1);
+        } else if (response?.data?.results) {
+          productsData = response.data.results;
+          setTotalProducts(response.data.count || productsData.length);
+          setTotalPages(response.data.total_pages || 1);
+        } else if (Array.isArray(response?.data)) {
+          productsData = response.data;
+          setTotalProducts(productsData.length);
+          setTotalPages(1);
+        } else if (Array.isArray(response)) {
+          productsData = response;
+          setTotalProducts(productsData.length);
+          setTotalPages(1);
+        }
+        
+        console.log('Processed products data:', productsData);
+        setProducts(Array.isArray(productsData) ? productsData : []);
+        offlineStorage.saveProducts(productsData);
       } else {
         const cachedProducts = offlineStorage.getProducts();
         let filteredProducts = cachedProducts;

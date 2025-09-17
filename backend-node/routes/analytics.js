@@ -1,6 +1,6 @@
 const express = require('express');
 const { Pool } = require('pg');
-const jwt = require('jsonwebtoken');
+const { authenticateToken } = require('../middleware/auth');
 const router = express.Router();
 
 const pool = new Pool({
@@ -8,49 +8,24 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
-const authenticateToken = (req, res, next) => {
-  const token = req.headers.authorization?.replace('Bearer ', '');
-  if (!token) {
-    return res.status(401).json({ error: 'No token provided' });
-  }
-  
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
-    req.user = decoded;
-    next();
-  } catch (error) {
-    return res.status(401).json({ error: 'Invalid token' });
-  }
-};
-
-// Get quick stats - matching Django implementation
+// Get quick stats
 router.get('/quick-stats', authenticateToken, async (req, res) => {
   try {
-    // Get user's business ID from accounts_business table
-    const businessResult = await pool.query(
-      'SELECT id FROM accounts_business WHERE owner_id = $1::bigint',
-      [req.user.userId]
-    );
+    const businessId = req.user.business_id;
     
-    if (businessResult.rows.length === 0) {
-      return res.json({ total_products: 0, low_stock_count: 0, monthly_revenue: 0 });
-    }
-    
-    const businessId = businessResult.rows[0].id;
-    
-    // Total products - matching Django
+    // Total products
     const productsResult = await pool.query(
       'SELECT COUNT(*) as count FROM inventory_product WHERE business_id = $1::bigint',
       [businessId]
     );
     
-    // Low stock count - matching Django
+    // Low stock count
     const lowStockResult = await pool.query(
       'SELECT COUNT(*) as count FROM inventory_product WHERE business_id = $1::bigint AND stock_quantity <= low_stock_threshold',
       [businessId]
     );
     
-    // This month's revenue - matching Django
+    // This month's revenue
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const monthlyRevenueResult = await pool.query(

@@ -1,26 +1,24 @@
 const express = require('express');
-const jwt = require('jsonwebtoken');
+const { Pool } = require('pg');
+const { authenticateToken } = require('../middleware/auth');
 const router = express.Router();
 
-const authenticateToken = (req, res, next) => {
-  const token = req.headers.authorization?.replace('Bearer ', '');
-  if (!token) {
-    return res.status(401).json({ error: 'No token provided' });
-  }
-  
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
-    req.user = decoded;
-    next();
-  } catch (error) {
-    return res.status(401).json({ error: 'Invalid token' });
-  }
-};
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false }
+});
 
 // Get all listings
 router.get('/listings', authenticateToken, async (req, res) => {
   try {
-    res.json([]);
+    const result = await pool.query(
+      `SELECT * FROM marketplace_marketplacelisting 
+       WHERE status = 'active' 
+       ORDER BY created_at DESC 
+       LIMIT 50`
+    );
+    
+    res.json(result.rows);
   } catch (error) {
     console.error('Get listings error:', error);
     res.status(500).json({ error: 'Failed to fetch listings' });
@@ -30,7 +28,14 @@ router.get('/listings', authenticateToken, async (req, res) => {
 // Get my listings
 router.get('/listings/my_listings', authenticateToken, async (req, res) => {
   try {
-    res.json([]);
+    const result = await pool.query(
+      `SELECT * FROM marketplace_marketplacelisting 
+       WHERE seller_id = $1::bigint 
+       ORDER BY created_at DESC`,
+      [req.user.id]
+    );
+    
+    res.json(result.rows);
   } catch (error) {
     console.error('Get my listings error:', error);
     res.status(500).json({ error: 'Failed to fetch my listings' });
@@ -50,7 +55,14 @@ router.post('/listings', authenticateToken, async (req, res) => {
 // Get group buys
 router.get('/group-buys', authenticateToken, async (req, res) => {
   try {
-    res.json([]);
+    const result = await pool.query(
+      `SELECT * FROM marketplace_groupbuyrequest 
+       WHERE status IN ('active', 'open') 
+       ORDER BY created_at DESC 
+       LIMIT 50`
+    );
+    
+    res.json(result.rows);
   } catch (error) {
     console.error('Get group buys error:', error);
     res.status(500).json({ error: 'Failed to fetch group buys' });
@@ -70,7 +82,13 @@ router.post('/group-buys', authenticateToken, async (req, res) => {
 // Get suppliers
 router.get('/suppliers', authenticateToken, async (req, res) => {
   try {
-    res.json([]);
+    const result = await pool.query(
+      `SELECT * FROM marketplace_localsupplier 
+       ORDER BY rating DESC, name ASC 
+       LIMIT 50`
+    );
+    
+    res.json(result.rows);
   } catch (error) {
     console.error('Get suppliers error:', error);
     res.status(500).json({ error: 'Failed to fetch suppliers' });
@@ -90,7 +108,17 @@ router.post('/suppliers', authenticateToken, async (req, res) => {
 // Get offers
 router.get('/offers', authenticateToken, async (req, res) => {
   try {
-    res.json([]);
+    const result = await pool.query(
+      `SELECT o.*, l.title as listing_title 
+       FROM marketplace_marketplaceoffer o
+       LEFT JOIN marketplace_marketplacelisting l ON o.listing_id = l.id
+       WHERE o.buyer_id = $1::bigint OR l.seller_id = $1::bigint
+       ORDER BY o.created_at DESC 
+       LIMIT 50`,
+      [req.user.id]
+    );
+    
+    res.json(result.rows);
   } catch (error) {
     console.error('Get offers error:', error);
     res.status(500).json({ error: 'Failed to fetch offers' });

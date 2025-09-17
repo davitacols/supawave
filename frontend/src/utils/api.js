@@ -1,6 +1,6 @@
 // import ErrorHandler from './errorHandler'; // Unused for now
 
-const API_BASE_URL = 'https://supawave-backend-qlkloz8u4-davitacols-projects.vercel.app/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
 console.log('🔗 API Base URL:', API_BASE_URL);
 
 // Debug token on app load

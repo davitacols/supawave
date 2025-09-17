@@ -14,12 +14,12 @@ const pool = new Pool({
 // Get all staff
 router.get('/', authenticateToken, async (req, res) => {
   try {
-    console.log('👥 /api/staff/ called for user:', req.user.userId);
+    console.log('👥 /api/staff/ called for user:', req.user.id);
     
     // Get user's business ID
     const businessResult = await pool.query(
       'SELECT id FROM accounts_business WHERE owner_id = $1::bigint',
-      [req.user.userId]
+      [req.user.id]
     );
     
     if (businessResult.rows.length === 0) {
@@ -38,7 +38,17 @@ router.get('/', authenticateToken, async (req, res) => {
     );
     
     console.log('👥 /api/staff/ returning:', staffResult.rows.length, 'staff members');
-    res.json(staffResult.rows);
+    console.log('👥 Staff data:', JSON.stringify(staffResult.rows, null, 2));
+    
+    // Return in the format the frontend expects
+    const response = {
+      data: staffResult.rows,
+      results: staffResult.rows,
+      count: staffResult.rows.length
+    };
+    
+    console.log('👥 Sending response:', JSON.stringify(response, null, 2));
+    res.json(response);
   } catch (error) {
     console.error('Get staff error:', error);
     res.status(500).json({ error: 'Failed to fetch staff' });

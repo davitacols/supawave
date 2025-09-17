@@ -21,7 +21,8 @@ const NotificationBell = () => {
 
   const fetchNotifications = async () => {
     try {
-      const response = await fetch('https://supawave-backend-qlkloz8u4-davitacols-projects.vercel.app/api/notifications/', {
+      const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
+      const response = await fetch(`${API_BASE_URL}/notifications/`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('access_token')}`
         }

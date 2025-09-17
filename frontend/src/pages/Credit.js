@@ -138,7 +138,7 @@ const DashboardTab = ({ dashboard }) => {
           <div className="ml-5 w-0 flex-1">
             <dl>
               <dt className="text-sm font-medium text-gray-500 truncate">Total Outstanding</dt>
-              <dd className="text-2xl font-semibold text-gray-900">₦{dashboard.total_outstanding.toLocaleString()}</dd>
+              <dd className="text-2xl font-semibold text-gray-900">₦{(dashboard.total_outstanding || 0).toLocaleString()}</dd>
             </dl>
           </div>
         </div>
@@ -152,7 +152,7 @@ const DashboardTab = ({ dashboard }) => {
           <div className="ml-5 w-0 flex-1">
             <dl>
               <dt className="text-sm font-medium text-gray-500 truncate">Overdue Amount</dt>
-              <dd className="text-2xl font-semibold text-gray-900">₦{dashboard.overdue_amount.toLocaleString()}</dd>
+              <dd className="text-2xl font-semibold text-gray-900">₦{(dashboard.overdue_amount || 0).toLocaleString()}</dd>
             </dl>
           </div>
         </div>
@@ -166,7 +166,7 @@ const DashboardTab = ({ dashboard }) => {
           <div className="ml-5 w-0 flex-1">
             <dl>
               <dt className="text-sm font-medium text-gray-500 truncate">Weekly Collections</dt>
-              <dd className="text-2xl font-semibold text-gray-900">₦{dashboard.weekly_collections.toLocaleString()}</dd>
+              <dd className="text-2xl font-semibold text-gray-900">₦{(dashboard.weekly_collections || 0).toLocaleString()}</dd>
             </dl>
           </div>
         </div>
@@ -180,7 +180,7 @@ const DashboardTab = ({ dashboard }) => {
           <div className="ml-5 w-0 flex-1">
             <dl>
               <dt className="text-sm font-medium text-gray-500 truncate">Customers with Debt</dt>
-              <dd className="text-2xl font-semibold text-gray-900">{dashboard.customers_with_debt}</dd>
+              <dd className="text-2xl font-semibold text-gray-900">{dashboard.total_credit_customers || 0}</dd>
             </dl>
           </div>
         </div>

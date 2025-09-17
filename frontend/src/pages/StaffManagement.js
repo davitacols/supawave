@@ -50,7 +50,25 @@ const StaffManagement = () => {
   const fetchStaff = async () => {
     try {
       const response = await authAPI.getStaff();
-      const staffData = response?.data?.results || response?.results || [];
+      console.log('Staff API response:', response);
+      
+      // Handle different response structures
+      let staffData = [];
+      if (response?.data?.results) {
+        staffData = response.data.results;
+      } else if (response?.data?.data) {
+        staffData = response.data.data;
+      } else if (response?.data && Array.isArray(response.data)) {
+        staffData = response.data;
+      } else if (response?.results) {
+        staffData = response.results;
+      } else if (Array.isArray(response?.data)) {
+        staffData = response.data;
+      } else if (Array.isArray(response)) {
+        staffData = response;
+      }
+      
+      console.log('Processed staff data:', staffData);
       setStaff(Array.isArray(staffData) ? staffData : []);
     } catch (error) {
       console.error('Error fetching staff:', error);

@@ -1,6 +1,6 @@
 const express = require('express');
-const jwt = require('jsonwebtoken');
 const { Pool } = require('pg');
+const { authenticateToken } = require('../middleware/auth');
 require('dotenv').config();
 
 const router = express.Router();
@@ -11,30 +11,15 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
-const authenticateToken = (req, res, next) => {
-  const token = req.headers.authorization?.replace('Bearer ', '');
-  if (!token) {
-    return res.status(401).json({ error: 'No token provided' });
-  }
-  
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
-    req.user = decoded;
-    next();
-  } catch (error) {
-    return res.status(401).json({ error: 'Invalid token' });
-  }
-};
-
 // Get all stores
 router.get('/', authenticateToken, async (req, res) => {
   try {
-    console.log('🏪 Getting stores for user:', req.user.userId);
+    console.log('🏪 Getting stores for user:', req.user.id);
     
     // Get user's business ID
     const businessResult = await pool.query(
       'SELECT id FROM accounts_business WHERE owner_id = $1::bigint',
-      [req.user.userId]
+      [req.user.id]
     );
     
     if (businessResult.rows.length === 0) {
@@ -75,12 +60,12 @@ router.post('/', authenticateToken, async (req, res) => {
 // Get managers
 router.get('/managers', authenticateToken, async (req, res) => {
   try {
-    console.log('👥 Getting managers for user:', req.user.userId);
+    console.log('👥 Getting managers for user:', req.user.id);
     
     // Get user's business ID
     const businessResult = await pool.query(
       'SELECT id FROM accounts_business WHERE owner_id = $1::bigint',
-      [req.user.userId]
+      [req.user.id]
     );
     
     if (businessResult.rows.length === 0) {

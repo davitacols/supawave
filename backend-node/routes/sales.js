@@ -13,11 +13,10 @@ const pool = new Pool({
 router.get('/', authenticateToken, async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT s.*, c.name as customer_name
-       FROM sales_sale s
-       LEFT JOIN customers_customer c ON s.customer_id = c.id
-       WHERE s.business_id = $1::bigint
-       ORDER BY s.created_at DESC
+      `SELECT id, total_amount, customer_phone, created_at
+       FROM sales_sale
+       WHERE business_id = $1::bigint
+       ORDER BY created_at DESC
        LIMIT 100`,
       [req.user.business_id]
     );

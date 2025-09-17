@@ -54,9 +54,16 @@ app.get('/api/debug', (req, res) => {
 app.use('/api/inventory', require('./routes/inventory'));
 app.use('/api/sales', require('./routes/sales'));
 app.use('/api/customers', require('./routes/customers'));
+app.use('/api/credit', require('./routes/credit'));
+app.use('/api/analytics', require('./routes/analytics'));
 app.use('/api/reports', require('./routes/reports'));
 app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/staff', require('./routes/staff'));
+app.use('/api/stores', require('./routes/stores'));
+app.use('/api/invoices', require('./routes/invoices'));
+app.use('/api/transfers', require('./routes/transfers'));
+app.use('/api/marketplace', require('./routes/marketplace'));
+app.use('/api/dashboard', require('./routes/dashboard'));
 
 // Health check
 app.get('/', (req, res) => {
@@ -88,6 +95,28 @@ app.get('/api', (req, res) => {
 app.post('/api/test-login', (req, res) => {
   console.log('🧪 Test login received:', req.body);
   res.json({ message: 'Test login endpoint working', body: req.body });
+});
+
+// Quick login endpoint for testing
+app.post('/api/quick-login', (req, res) => {
+  const { generateTokenPair } = require('./utils/tokenGenerator');
+  
+  const testUser = {
+    id: 1,
+    email: 'test@supawave.com',
+    username: 'testuser',
+    first_name: 'Test',
+    last_name: 'User',
+    role: 'owner',
+    business_id: 1
+  };
+  
+  const tokens = generateTokenPair(testUser);
+  
+  res.json({
+    user: testUser,
+    tokens
+  });
 });
 
 // Test staff endpoint

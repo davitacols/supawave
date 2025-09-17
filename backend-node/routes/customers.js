@@ -16,12 +16,12 @@ router.get('/', authenticateToken, async (req, res) => {
               COUNT(s.id) as total_orders,
               COALESCE(SUM(s.total_amount), 0) as total_spent,
               MAX(s.created_at) as last_order_date
-       FROM customers_customer c
-       LEFT JOIN sales_sale s ON c.id = s.customer_id
-       WHERE c.business_id = $1::bigint
+       FROM customers c
+       LEFT JOIN sales_sale s ON c.phone = s.customer_phone
+       WHERE c.user_id = $1::uuid
        GROUP BY c.id
        ORDER BY c.created_at DESC`,
-      [req.user.business_id]
+      [req.user.id]
     );
     
     res.json(result.rows);
@@ -37,7 +37,7 @@ router.get('/credit', authenticateToken, async (req, res) => {
     const result = await pool.query(
       `SELECT c.*, 
               COALESCE(c.credit_balance, 0) as credit_balance
-       FROM customers_customer c
+       FROM credit_creditcustomer c
        WHERE c.business_id = $1::bigint AND c.credit_balance > 0
        ORDER BY c.credit_balance DESC`,
       [req.user.business_id]
@@ -56,10 +56,10 @@ router.post('/', authenticateToken, async (req, res) => {
     const { name, email, phone_number, address, credit_limit } = req.body;
     
     const result = await pool.query(
-      `INSERT INTO customers_customer (name, email, phone_number, address, credit_limit, business_id, created_at)
-       VALUES ($1, $2, $3, $4, $5, $6::bigint, NOW())
+      `INSERT INTO customers (name, email, phone, address, user_id, created_at)
+       VALUES ($1, $2, $3, $4, $5::uuid, NOW())
        RETURNING *`,
-      [name, email, phone_number, address, credit_limit || 0, req.user.business_id]
+      [name, email, phone_number, address, req.user.id]
     );
     
     res.status(201).json(result.rows[0]);
@@ -76,11 +76,11 @@ router.put('/:id', authenticateToken, async (req, res) => {
     const { name, email, phone_number, address, credit_limit } = req.body;
     
     const result = await pool.query(
-      `UPDATE customers_customer 
-       SET name = $1, email = $2, phone_number = $3, address = $4, credit_limit = $5
-       WHERE id = $6::bigint AND business_id = $7::bigint
+      `UPDATE customers 
+       SET name = $1, email = $2, phone = $3, address = $4
+       WHERE id = $5::uuid AND user_id = $6::uuid
        RETURNING *`,
-      [name, email, phone_number, address, credit_limit, id, req.user.business_id]
+      [name, email, phone_number, address, id, req.user.id]
     );
     
     if (result.rows.length === 0) {
@@ -100,8 +100,8 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     const { id } = req.params;
     
     const result = await pool.query(
-      'DELETE FROM customers_customer WHERE id = $1::bigint AND business_id = $2::bigint RETURNING id',
-      [id, req.user.business_id]
+      'DELETE FROM customers WHERE id = $1::uuid AND user_id = $2::uuid RETURNING id',
+      [id, req.user.id]
     );
     
     if (result.rows.length === 0) {
