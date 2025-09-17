@@ -189,16 +189,23 @@ const ChatAssistant = () => {
               >
                 <div className={`max-w-[90%] ${message.type === 'user' ? 'order-2' : 'order-1'}`}>
                   {message.type === 'ai' ? (
-                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div 
+                      className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden cursor-pointer hover:shadow-md hover:border-blue-200 transition-all duration-200 group"
+                      onClick={() => setInputMessage(message.content.replace(/[🧠💡🤖]/g, '').replace(/\n/g, ' ').trim())}
+                      title="Click to respond to this message"
+                    >
                       <div className="p-5">
                         <MessageContent content={message.content} />
                       </div>
-                      <div className="px-5 pb-3 flex items-center justify-between text-xs text-gray-400 bg-gray-50">
+                      <div className="px-5 pb-3 flex items-center justify-between text-xs text-gray-400 bg-gray-50 group-hover:bg-blue-50 transition-colors">
                         <span className="flex items-center space-x-1">
                           <SparklesIcon className="h-3 w-3" />
                           <span>Supa</span>
                         </span>
-                        <span>{message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        <span className="flex items-center space-x-1">
+                          <span>{message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                          <span className="text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity">• Click to respond</span>
+                        </span>
                       </div>
                     </div>
                   ) : (
