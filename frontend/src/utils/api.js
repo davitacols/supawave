@@ -95,15 +95,15 @@ const api = {
 };
 
 export const authAPI = {
-  register: (data) => api.post('/auth/register/', data),
-  login: (data) => api.post('/auth/login/', data),
-  logout: () => api.post('/auth/logout/'),
-  getBusiness: () => api.get('/auth/business/'),
-  updateBusiness: (data) => api.put('/auth/business/', data),
-  getStaff: () => api.get('/auth/staff/'),
-  createStaff: (data) => api.post('/auth/staff/', data),
-  updateStaff: (id, data) => api.put(`/auth/staff/${id}/`, data),
-  deleteStaff: (id) => api.delete(`/auth/staff/${id}/`),
+  register: (data) => api.post('/auth/register', data),
+  login: (data) => api.post('/auth/login', data),
+  logout: () => api.post('/auth/logout'),
+  getBusiness: () => api.get('/auth/business'),
+  updateBusiness: (data) => api.put('/auth/business', data),
+  getStaff: () => api.get('/auth/staff'),
+  createStaff: (data) => api.post('/auth/staff', data),
+  updateStaff: (id, data) => api.put(`/auth/staff/${id}`, data),
+  deleteStaff: (id) => api.delete(`/auth/staff/${id}`),
 };
 
 export const inventoryAPI = {
