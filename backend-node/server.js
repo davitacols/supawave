@@ -144,9 +144,14 @@ app.use('*', (req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 SupaWave API running on port ${PORT}`);
   console.log(`📊 Health check: http://localhost:${PORT}/`);
   console.log(`🔗 API endpoints: http://localhost:${PORT}/api`);
   console.log(`🌐 Server accessible on both localhost and network IP`);
+  
+  // Log environment info for deployment
+  console.log(`🔑 JWT_SECRET exists: ${!!process.env.JWT_SECRET}`);
+  console.log(`🔑 Using JWT_SECRET: ${process.env.JWT_SECRET?.substring(0, 10)}...`);
+  console.log(`🤖 Claude API Key configured: ${!!process.env.CLAUDE_API_KEY}`);
 });
