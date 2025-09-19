@@ -12,6 +12,9 @@ app.use(cors({
 
 app.use(express.json());
 
+// Store registered users
+const registeredUsers = {};
+
 // Health check
 app.get('/', (req, res) => {
   res.json({ 
@@ -22,9 +25,6 @@ app.get('/', (req, res) => {
 });
 
 // Auth endpoints
-// Store registered users
-const registeredUsers = {};
-
 app.post('/api/auth/register', (req, res) => {
   const { business_name, username, email, password, first_name, last_name, phone_number } = req.body;
   
@@ -132,12 +132,24 @@ app.get('/api/auth/business', (req, res) => {
   });
 });
 
+app.put('/api/auth/business', (req, res) => {
+  res.json({ message: 'Business updated successfully' });
+});
+
 app.get('/api/auth/staff', (req, res) => {
   res.json([]);
 });
 
 app.post('/api/auth/staff', (req, res) => {
   res.status(201).json({ message: 'Staff created successfully' });
+});
+
+app.put('/api/auth/staff/:id', (req, res) => {
+  res.json({ message: 'Staff updated successfully' });
+});
+
+app.delete('/api/auth/staff/:id', (req, res) => {
+  res.json({ message: 'Staff deleted successfully' });
 });
 
 // Dashboard endpoints
@@ -162,6 +174,14 @@ app.post('/api/inventory/products/', (req, res) => {
   res.status(201).json({ message: 'Product created successfully' });
 });
 
+app.put('/api/inventory/products/:id/', (req, res) => {
+  res.json({ message: 'Product updated successfully' });
+});
+
+app.delete('/api/inventory/products/:id/', (req, res) => {
+  res.json({ message: 'Product deleted successfully' });
+});
+
 app.get('/api/inventory/products/low-stock/', (req, res) => {
   res.json([]);
 });
@@ -170,7 +190,27 @@ app.get('/api/inventory/categories/', (req, res) => {
   res.json([]);
 });
 
+app.post('/api/inventory/categories/', (req, res) => {
+  res.status(201).json({ message: 'Category created successfully' });
+});
+
 app.get('/api/inventory/suppliers/', (req, res) => {
+  res.json([]);
+});
+
+app.post('/api/inventory/suppliers/', (req, res) => {
+  res.status(201).json({ message: 'Supplier created successfully' });
+});
+
+app.get('/api/inventory/barcode-search/', (req, res) => {
+  res.json({ product: null });
+});
+
+app.post('/api/inventory/products/:id/generate-barcode/', (req, res) => {
+  res.json({ barcode: '123456789' });
+});
+
+app.get('/api/inventory/smart-reorder/', (req, res) => {
   res.json([]);
 });
 
@@ -185,6 +225,10 @@ app.post('/api/sales/', (req, res) => {
 
 app.get('/api/sales/analytics/', (req, res) => {
   res.json({ totalSales: 0, totalRevenue: 0 });
+});
+
+app.get('/api/sales/receipt/:id/', (req, res) => {
+  res.json({ receipt: 'Receipt data' });
 });
 
 // Customer endpoints
@@ -205,9 +249,21 @@ app.get('/api/analytics/live-metrics/', (req, res) => {
   res.json({ metrics: {} });
 });
 
+app.get('/api/analytics/quick-stats/', (req, res) => {
+  res.json({ stats: {} });
+});
+
+app.post('/api/analytics/alerts/:id/read/', (req, res) => {
+  res.json({ message: 'Alert marked as read' });
+});
+
 // Notifications
 app.get('/api/notifications/', (req, res) => {
   res.json([]);
+});
+
+app.patch('/api/notifications/:id/', (req, res) => {
+  res.json({ message: 'Notification updated' });
 });
 
 app.post('/api/notifications/mark-all-read/', (req, res) => {
@@ -223,6 +279,89 @@ app.post('/api/invoices/', (req, res) => {
   res.status(201).json({ message: 'Invoice created successfully' });
 });
 
+app.get('/api/invoices/:id/', (req, res) => {
+  res.json({ invoice: 'Invoice data' });
+});
+
+app.put('/api/invoices/:id/', (req, res) => {
+  res.json({ message: 'Invoice updated successfully' });
+});
+
+app.get('/api/invoices/customers/', (req, res) => {
+  res.json([]);
+});
+
+app.post('/api/invoices/customers/', (req, res) => {
+  res.status(201).json({ message: 'Customer created successfully' });
+});
+
+app.put('/api/invoices/customers/:id/', (req, res) => {
+  res.json({ message: 'Customer updated successfully' });
+});
+
+app.delete('/api/invoices/customers/:id/', (req, res) => {
+  res.json({ message: 'Customer deleted successfully' });
+});
+
+// WhatsApp endpoints
+app.get('/api/whatsapp/config/', (req, res) => {
+  res.json({ config: {} });
+});
+
+app.put('/api/whatsapp/config/', (req, res) => {
+  res.json({ message: 'WhatsApp config updated' });
+});
+
+app.get('/api/whatsapp/templates/', (req, res) => {
+  res.json([]);
+});
+
+app.post('/api/whatsapp/templates/', (req, res) => {
+  res.status(201).json({ message: 'Template created successfully' });
+});
+
+app.get('/api/whatsapp/messages/', (req, res) => {
+  res.json([]);
+});
+
+app.post('/api/whatsapp/send-promotion/', (req, res) => {
+  res.json({ message: 'Promotion sent successfully' });
+});
+
+// Sync endpoints
+app.get('/api/sync/data/', (req, res) => {
+  res.json({ data: [] });
+});
+
+app.post('/api/sync/upload/', (req, res) => {
+  res.json({ message: 'Data uploaded successfully' });
+});
+
+app.get('/api/sync/status/', (req, res) => {
+  res.json({ status: 'connected' });
+});
+
+// Payment endpoints
+app.get('/api/payments/plans/', (req, res) => {
+  res.json([]);
+});
+
+app.get('/api/payments/status/', (req, res) => {
+  res.json({ status: 'active' });
+});
+
+app.post('/api/payments/initiate/', (req, res) => {
+  res.json({ payment_url: 'https://paystack.com/pay/test' });
+});
+
+app.post('/api/payments/verify/', (req, res) => {
+  res.json({ status: 'success' });
+});
+
+app.post('/api/payments/cancel/', (req, res) => {
+  res.json({ message: 'Subscription cancelled' });
+});
+
 // Store endpoints
 app.get('/api/stores/', (req, res) => {
   res.json([]);
@@ -230,6 +369,26 @@ app.get('/api/stores/', (req, res) => {
 
 app.post('/api/stores/', (req, res) => {
   res.status(201).json({ message: 'Store created successfully' });
+});
+
+app.put('/api/stores/:id/', (req, res) => {
+  res.json({ message: 'Store updated successfully' });
+});
+
+app.delete('/api/stores/:id/', (req, res) => {
+  res.json({ message: 'Store deleted successfully' });
+});
+
+app.post('/api/stores/:id/set_main/', (req, res) => {
+  res.json({ message: 'Main store set successfully' });
+});
+
+app.get('/api/stores/:id/inventory/', (req, res) => {
+  res.json([]);
+});
+
+app.post('/api/stores/:id/add-product/', (req, res) => {
+  res.json({ message: 'Product added to store' });
 });
 
 // Transfer endpoints
@@ -241,6 +400,18 @@ app.post('/api/transfers/', (req, res) => {
   res.status(201).json({ message: 'Transfer created successfully' });
 });
 
+app.post('/api/transfers/:id/approve/', (req, res) => {
+  res.json({ message: 'Transfer approved' });
+});
+
+app.post('/api/transfers/:id/complete/', (req, res) => {
+  res.json({ message: 'Transfer completed' });
+});
+
+app.post('/api/transfers/:id/cancel/', (req, res) => {
+  res.json({ message: 'Transfer cancelled' });
+});
+
 // Marketplace endpoints
 app.get('/api/marketplace/listings/', (req, res) => {
   res.json([]);
@@ -250,6 +421,50 @@ app.post('/api/marketplace/listings/', (req, res) => {
   res.status(201).json({ message: 'Listing created successfully' });
 });
 
+app.get('/api/marketplace/listings/my_listings/', (req, res) => {
+  res.json([]);
+});
+
+app.post('/api/marketplace/listings/:id/make_offer/', (req, res) => {
+  res.json({ message: 'Offer made successfully' });
+});
+
+app.get('/api/marketplace/offers/', (req, res) => {
+  res.json([]);
+});
+
+app.post('/api/marketplace/offers/:id/accept/', (req, res) => {
+  res.json({ message: 'Offer accepted' });
+});
+
+app.post('/api/marketplace/offers/:id/reject/', (req, res) => {
+  res.json({ message: 'Offer rejected' });
+});
+
+app.get('/api/marketplace/group-buys/', (req, res) => {
+  res.json([]);
+});
+
+app.post('/api/marketplace/group-buys/', (req, res) => {
+  res.status(201).json({ message: 'Group buy created successfully' });
+});
+
+app.post('/api/marketplace/group-buys/:id/join/', (req, res) => {
+  res.json({ message: 'Joined group buy successfully' });
+});
+
+app.get('/api/marketplace/suppliers/', (req, res) => {
+  res.json([]);
+});
+
+app.post('/api/marketplace/suppliers/', (req, res) => {
+  res.status(201).json({ message: 'Supplier created successfully' });
+});
+
+app.post('/api/marketplace/suppliers/:id/add_review/', (req, res) => {
+  res.json({ message: 'Review added successfully' });
+});
+
 // Reports endpoints
 app.get('/api/reports/daily/', (req, res) => {
   res.json({ data: [] });
@@ -257,6 +472,22 @@ app.get('/api/reports/daily/', (req, res) => {
 
 app.get('/api/reports/monthly/', (req, res) => {
   res.json({ data: [] });
+});
+
+app.get('/api/reports/yearly/', (req, res) => {
+  res.json({ data: [] });
+});
+
+app.get('/api/reports/export/daily/', (req, res) => {
+  res.json({ export_url: 'https://example.com/export.csv' });
+});
+
+app.get('/api/reports/export/monthly/', (req, res) => {
+  res.json({ export_url: 'https://example.com/export.csv' });
+});
+
+app.get('/api/reports/export/yearly/', (req, res) => {
+  res.json({ export_url: 'https://example.com/export.csv' });
 });
 
 // AI endpoints
