@@ -281,57 +281,22 @@ app.get('/api/dashboard/stats', async (req, res) => {
     let salesResult, productsResult, lowStockResult, recentSalesResult;
     
     try {
-      // Try different possible table names for sales
-      const salesTables = ['sales_sale', 'sale', 'sales', 'pos_sale'];
-      let found = false;
-      
-      for (const table of salesTables) {
-        try {
-          salesResult = await pool.query(
-            `SELECT COUNT(*) as count, COALESCE(SUM(total_amount), 0) as revenue FROM ${table} WHERE business_id = $1::bigint`,
-            [businessId]
-          );
-          console.log(`Found sales data in table: ${table}`);
-          found = true;
-          break;
-        } catch (err) {
-          console.log(`Table ${table} not found`);
-          continue;
-        }
-      }
-      
-      if (!found) {
-        salesResult = { rows: [{ count: '0', revenue: '0' }] };
-      }
+      salesResult = await pool.query(
+        'SELECT COUNT(*) as count, COALESCE(SUM(total_amount), 0) as revenue FROM sales_sale WHERE business_id = $1::bigint',
+        [businessId]
+      );
     } catch (e) {
-      console.log('All sales tables failed:', e.message);
+      console.log('sales_sale query failed:', e.message);
       salesResult = { rows: [{ count: '0', revenue: '0' }] };
     }
     
     try {
-      const productTables = ['inventory_product', 'product', 'products', 'pos_product'];
-      let found = false;
-      
-      for (const table of productTables) {
-        try {
-          productsResult = await pool.query(
-            `SELECT COUNT(*) as count FROM ${table} WHERE business_id = $1::bigint`,
-            [businessId]
-          );
-          console.log(`Found products data in table: ${table}`);
-          found = true;
-          break;
-        } catch (err) {
-          console.log(`Table ${table} not found`);
-          continue;
-        }
-      }
-      
-      if (!found) {
-        productsResult = { rows: [{ count: '0' }] };
-      }
+      productsResult = await pool.query(
+        'SELECT COUNT(*) as count FROM inventory_product WHERE business_id = $1::bigint',
+        [businessId]
+      );
     } catch (e) {
-      console.log('All product tables failed');
+      console.log('inventory_product query failed:', e.message);
       productsResult = { rows: [{ count: '0' }] };
     }
     
@@ -479,7 +444,7 @@ app.get('/api/customers/', async (req, res) => {
   try {
     const businessId = getBusinessId(req);
     const result = await pool.query(
-      'SELECT * FROM customers_customer WHERE business_id = $1 ORDER BY name',
+      'SELECT * FROM customers WHERE business_id = $1::bigint ORDER BY name',
       [businessId]
     );
     res.json(result.rows);
@@ -700,7 +665,7 @@ app.get('/api/transfers/', async (req, res) => {
     console.log('Fetching transfers for business:', businessId);
     
     const result = await pool.query(
-      'SELECT * FROM inventory_transfer WHERE business_id = $1::bigint ORDER BY created_at DESC',
+      'SELECT * FROM stores_inventorytransfer WHERE business_id = $1::bigint ORDER BY created_at DESC',
       [businessId]
     );
     
