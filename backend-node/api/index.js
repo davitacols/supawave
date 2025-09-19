@@ -4,11 +4,32 @@ const { Pool } = require('pg');
 
 const app = express();
 
-// Database connection
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }
-});
+// Database connection with better error handling
+let pool;
+try {
+  if (!process.env.DATABASE_URL) {
+    console.error('DATABASE_URL environment variable is not set');
+  } else {
+    console.log('DATABASE_URL exists:', !!process.env.DATABASE_URL);
+    console.log('DATABASE_URL starts with:', process.env.DATABASE_URL?.substring(0, 20));
+  }
+  
+  pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false },
+    connectionTimeoutMillis: 10000,
+    idleTimeoutMillis: 30000,
+    max: 10
+  });
+  
+  // Test connection
+  pool.on('error', (err) => {
+    console.error('Database pool error:', err);
+  });
+  
+} catch (error) {
+  console.error('Database connection setup failed:', error);
+}
 
 // Simple CORS
 app.use(cors({
@@ -58,15 +79,30 @@ app.get('/', (req, res) => {
   });
 });
 
+// Debug endpoint to check environment
+app.get('/api/debug/env', (req, res) => {
+  res.json({
+    NODE_ENV: process.env.NODE_ENV,
+    DATABASE_URL_EXISTS: !!process.env.DATABASE_URL,
+    DATABASE_URL_PREFIX: process.env.DATABASE_URL?.substring(0, 20),
+    JWT_SECRET_EXISTS: !!process.env.JWT_SECRET,
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Debug endpoint to check tables
 app.get('/api/debug/tables', async (req, res) => {
   try {
+    if (!pool) {
+      return res.status(500).json({ error: 'Database pool not initialized' });
+    }
+    
     const result = await pool.query(
       "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_name"
     );
     res.json({ tables: result.rows.map(row => row.table_name) });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: error.message, stack: error.stack });
   }
 });
 
