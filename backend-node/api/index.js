@@ -90,6 +90,48 @@ app.get('/api/debug/env', (req, res) => {
   });
 });
 
+// Debug endpoint to check dashboard data
+app.get('/api/debug/dashboard', async (req, res) => {
+  try {
+    const businessId = getBusinessId(req);
+    console.log('Debug dashboard for business:', businessId);
+    
+    // Check sales data
+    const salesResult = await pool.query(
+      'SELECT COUNT(*) as count, COALESCE(SUM(total_amount), 0) as revenue, business_id FROM sales_sale WHERE business_id = $1::bigint GROUP BY business_id',
+      [businessId]
+    );
+    
+    // Check products data
+    const productsResult = await pool.query(
+      'SELECT COUNT(*) as count, business_id FROM inventory_product WHERE business_id = $1::bigint GROUP BY business_id',
+      [businessId]
+    );
+    
+    // Check all sales for this business
+    const allSales = await pool.query(
+      'SELECT id, total_amount, business_id, created_at FROM sales_sale WHERE business_id = $1::bigint LIMIT 5',
+      [businessId]
+    );
+    
+    // Check all products for this business
+    const allProducts = await pool.query(
+      'SELECT id, name, business_id FROM inventory_product WHERE business_id = $1::bigint LIMIT 5',
+      [businessId]
+    );
+    
+    res.json({
+      businessId,
+      salesResult: salesResult.rows,
+      productsResult: productsResult.rows,
+      sampleSales: allSales.rows,
+      sampleProducts: allProducts.rows
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message, businessId: getBusinessId(req) });
+  }
+});
+
 // Debug endpoint to check tables
 app.get('/api/debug/tables', async (req, res) => {
   try {
