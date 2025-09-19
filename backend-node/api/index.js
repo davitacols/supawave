@@ -23,7 +23,24 @@ app.get('/', (req, res) => {
 
 // Auth endpoints
 app.post('/api/auth/register', (req, res) => {
-  res.status(201).json({ message: 'Registration successful' });
+  const { business_name, username, email, password, first_name, last_name, phone_number } = req.body;
+  
+  res.status(201).json({
+    user: {
+      id: '1104518454268002305',
+      username: username || 'newuser',
+      email: email,
+      first_name: first_name || 'New',
+      last_name: last_name || 'User',
+      role: 'owner',
+      business_id: '1104518460022685697'
+    },
+    tokens: {
+      access: 'test-token',
+      refresh: 'test-refresh-token',
+      expiresIn: 86400
+    }
+  });
 });
 
 app.post('/api/auth/login', (req, res) => {
