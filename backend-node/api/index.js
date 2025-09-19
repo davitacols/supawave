@@ -58,17 +58,69 @@ app.post('/api/auth/register', (req, res) => {
       business_id: newBusinessId
     },
     tokens: {
-      access: 'test-token-' + newUserId,
-      refresh: 'test-refresh-token-' + newUserId,
+      access: createJWTLikeToken({
+        userId: newUserId,
+        email: email,
+        role: 'owner',
+        businessId: newBusinessId
+      }),
+      refresh: 'refresh-token-' + newUserId,
       expiresIn: 86400
     }
   });
 });
 
+// Helper function to create JWT-like tokens
+const createJWTLikeToken = (payload) => {
+  const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
+  const payloadStr = btoa(JSON.stringify({
+    ...payload,
+    iat: Math.floor(Date.now() / 1000),
+    exp: Math.floor(Date.now() / 1000) + 86400
+  }));
+  const signature = btoa('fake-signature-' + Date.now());
+  return `${header}.${payloadStr}.${signature}`;
+};
+
 app.post('/api/auth/login', (req, res) => {
   const { email, password } = req.body;
   
+  // Check if user is registered
+  const registeredUser = registeredUsers[email];
+  if (registeredUser) {
+    const accessToken = createJWTLikeToken({
+      userId: registeredUser.id,
+      email: registeredUser.email,
+      role: registeredUser.role,
+      businessId: registeredUser.business_id
+    });
+    
+    return res.json({
+      user: {
+        id: registeredUser.id,
+        email: registeredUser.email,
+        first_name: registeredUser.first_name,
+        last_name: registeredUser.last_name,
+        role: registeredUser.role,
+        business_id: registeredUser.business_id
+      },
+      tokens: {
+        access: accessToken,
+        refresh: 'refresh-' + accessToken,
+        expiresIn: 86400
+      }
+    });
+  }
+  
+  // Default user login
   if (email === 'pic2nav@gmail.com' && password === 'password123') {
+    const accessToken = createJWTLikeToken({
+      userId: '1104518454268002305',
+      email: 'pic2nav@gmail.com',
+      role: 'owner',
+      businessId: '1104518460022685697'
+    });
+    
     res.json({
       user: {
         id: '1104518454268002305',
@@ -79,8 +131,8 @@ app.post('/api/auth/login', (req, res) => {
         business_id: '1104518460022685697'
       },
       tokens: {
-        access: 'test-token',
-        refresh: 'test-refresh-token',
+        access: accessToken,
+        refresh: 'refresh-' + accessToken,
         expiresIn: 86400
       }
     });
@@ -502,6 +554,67 @@ app.get('/api/credit/', (req, res) => {
 
 app.post('/api/credit/', (req, res) => {
   res.status(201).json({ message: 'Credit record created successfully' });
+});
+
+app.get('/api/credit/dashboard/', (req, res) => {
+  res.json({
+    total_outstanding: 250000,
+    overdue_amount: 75000,
+    weekly_collections: 45000,
+    total_credit_customers: 12
+  });
+});
+
+app.get('/api/credit/customers/', (req, res) => {
+  res.json([
+    {
+      id: 1,
+      name: 'John Doe',
+      phone: '+2348123456789',
+      credit_limit: 100000,
+      current_balance: 25000,
+      available_credit: 75000,
+      is_overdue: false
+    },
+    {
+      id: 2,
+      name: 'Jane Smith',
+      phone: '+2348987654321',
+      credit_limit: 50000,
+      current_balance: 60000,
+      available_credit: -10000,
+      is_overdue: true
+    }
+  ]);
+});
+
+app.post('/api/credit/customers/', (req, res) => {
+  res.status(201).json({ message: 'Credit customer created successfully' });
+});
+
+app.get('/api/credit/sales/', (req, res) => {
+  res.json([
+    {
+      id: 1,
+      customer_name: 'John Doe',
+      customer_phone: '+2348123456789',
+      total_amount: 15000,
+      amount_paid: 5000,
+      balance_due: 10000,
+      due_date: '2025-01-25',
+      is_paid: false
+    },
+    {
+      id: 2,
+      customer_name: 'Jane Smith',
+      customer_phone: '+2348987654321',
+      total_amount: 25000,
+      amount_paid: 25000,
+      balance_due: 0,
+      due_date: '2025-01-20',
+      is_paid: true
+    }
+  ]);
 });
 
 // Export for Vercel
