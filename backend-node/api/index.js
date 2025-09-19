@@ -58,16 +58,32 @@ const getBusinessId = (req) => {
   return businessId;
 };
 
-// Helper function to create JWT-like tokens
-const createJWTLikeToken = (payload) => {
-  const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
-  const payloadStr = btoa(JSON.stringify({
-    ...payload,
-    iat: Math.floor(Date.now() / 1000),
-    exp: Math.floor(Date.now() / 1000) + 86400
-  }));
-  const signature = btoa('fake-signature-' + Date.now());
-  return `${header}.${payloadStr}.${signature}`;
+// Helper function to create proper JWT tokens
+const jwt = require('jsonwebtoken');
+const JWT_SECRET = process.env.JWT_SECRET || '5e3c80ab2afc84ef34b46686373648c8ce0c5b77195336ed9f1d5a48ae16b050';
+
+const createJWTToken = (payload) => {
+  try {
+    return jwt.sign({
+      ...payload,
+      iat: Math.floor(Date.now() / 1000),
+      exp: Math.floor(Date.now() / 1000) + 86400
+    }, JWT_SECRET, {
+      issuer: 'supawave-api',
+      audience: 'supawave-client'
+    });
+  } catch (error) {
+    console.error('JWT creation failed, using fallback:', error);
+    // Fallback to base64 token
+    const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
+    const payloadStr = btoa(JSON.stringify({
+      ...payload,
+      iat: Math.floor(Date.now() / 1000),
+      exp: Math.floor(Date.now() / 1000) + 86400
+    }));
+    const signature = btoa('fallback-signature-' + Date.now());
+    return `${header}.${payloadStr}.${signature}`;
+  }
 };
 
 // Health check
@@ -181,7 +197,7 @@ app.post('/api/auth/register', (req, res) => {
       business_id: newBusinessId
     },
     tokens: {
-      access: createJWTLikeToken({
+      access: createJWTToken({
         userId: newUserId,
         email: email,
         role: 'owner',
@@ -200,7 +216,7 @@ app.post('/api/auth/login', async (req, res) => {
     // Check if user is registered
     const registeredUser = registeredUsers[email];
     if (registeredUser) {
-      const accessToken = createJWTLikeToken({
+      const accessToken = createJWTToken({
         userId: registeredUser.id,
         email: registeredUser.email,
         role: registeredUser.role,
@@ -232,7 +248,7 @@ app.post('/api/auth/login', async (req, res) => {
     
     if (userResult.rows.length > 0) {
       const user = userResult.rows[0];
-      const accessToken = createJWTLikeToken({
+      const accessToken = createJWTToken({
         userId: user.id,
         email: user.email,
         role: user.role,

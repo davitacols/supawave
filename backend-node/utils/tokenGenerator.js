@@ -1,8 +1,8 @@
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'your-refresh-secret-key';
+const JWT_SECRET = process.env.JWT_SECRET || '5e3c80ab2afc84ef34b46686373648c8ce0c5b77195336ed9f1d5a48ae16b050';
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || '5e3c80ab2afc84ef34b46686373648c8ce0c5b77195336ed9f1d5a48ae16b050';
 
 console.log('🔑 JWT_SECRET exists:', !!process.env.JWT_SECRET);
 console.log('🔑 Using JWT_SECRET:', JWT_SECRET.substring(0, 10) + '...');
