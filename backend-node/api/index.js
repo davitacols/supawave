@@ -234,7 +234,7 @@ app.get('/api/dashboard/stats', async (req, res) => {
     
     try {
       salesResult = await pool.query(
-        'SELECT COUNT(*) as count, COALESCE(SUM(total_amount), 0) as revenue FROM sales_sale WHERE business_id = $1',
+        'SELECT COUNT(*) as count, COALESCE(SUM(total_amount), 0) as revenue FROM sales_sale WHERE business_id = $1::bigint',
         [businessId]
       );
     } catch (e) {
@@ -244,7 +244,7 @@ app.get('/api/dashboard/stats', async (req, res) => {
     
     try {
       productsResult = await pool.query(
-        'SELECT COUNT(*) as count FROM inventory_product WHERE business_id = $1',
+        'SELECT COUNT(*) as count FROM inventory_product WHERE business_id = $1::bigint',
         [businessId]
       );
     } catch (e) {
@@ -254,7 +254,7 @@ app.get('/api/dashboard/stats', async (req, res) => {
     
     try {
       lowStockResult = await pool.query(
-        'SELECT COUNT(*) as count FROM inventory_product WHERE business_id = $1 AND stock_quantity <= reorder_level',
+        'SELECT COUNT(*) as count FROM inventory_product WHERE business_id = $1::bigint AND stock_quantity <= reorder_level',
         [businessId]
       );
     } catch (e) {
@@ -263,7 +263,7 @@ app.get('/api/dashboard/stats', async (req, res) => {
     
     try {
       recentSalesResult = await pool.query(
-        'SELECT id, customer_name, total_amount, created_at FROM sales_sale WHERE business_id = $1 ORDER BY created_at DESC LIMIT 5',
+        'SELECT id, customer_name, total_amount, created_at FROM sales_sale WHERE business_id = $1::bigint ORDER BY created_at DESC LIMIT 5',
         [businessId]
       );
     } catch (e) {
@@ -498,17 +498,44 @@ app.post('/api/auth/logout', (req, res) => {
 app.get('/api/auth/staff', async (req, res) => {
   try {
     const businessId = getBusinessId(req);
+    console.log('Fetching staff for business:', businessId);
+    
     const result = await pool.query(
       `SELECT id, username, first_name, last_name, email, phone_number, role, is_active_staff
        FROM accounts_user 
-       WHERE business_id = $1 AND role IN ('manager', 'cashier')
+       WHERE business_id = $1::bigint AND role IN ('manager', 'cashier')
        ORDER BY first_name, last_name`,
       [businessId]
     );
+    
+    console.log('Staff found:', result.rows.length);
     res.json(result.rows);
   } catch (error) {
     console.error('Staff fetch error:', error);
     res.json([]);
+  }
+});
+
+// Generate alerts endpoint
+app.post('/api/inventory/alerts/generate_alerts/', async (req, res) => {
+  try {
+    const businessId = getBusinessId(req);
+    
+    // Generate alerts for low stock products
+    const result = await pool.query(
+      `SELECT COUNT(*) as low_stock_count
+       FROM inventory_product 
+       WHERE business_id = $1::bigint AND stock_quantity <= reorder_level`,
+      [businessId]
+    );
+    
+    res.json({
+      message: 'Alerts generated successfully',
+      low_stock_alerts: parseInt(result.rows[0].low_stock_count || 0)
+    });
+  } catch (error) {
+    console.error('Generate alerts error:', error);
+    res.status(500).json({ error: 'Failed to generate alerts' });
   }
 });
 
@@ -587,10 +614,14 @@ app.post('/api/inventory/stock-takes/', async (req, res) => {
 app.get('/api/transfers/', async (req, res) => {
   try {
     const businessId = getBusinessId(req);
+    console.log('Fetching transfers for business:', businessId);
+    
     const result = await pool.query(
-      'SELECT * FROM inventory_transfer WHERE business_id = $1 ORDER BY created_at DESC',
+      'SELECT * FROM inventory_transfer WHERE business_id = $1::bigint ORDER BY created_at DESC',
       [businessId]
     );
+    
+    console.log('Transfers found:', result.rows.length);
     res.json(result.rows);
   } catch (error) {
     console.error('Transfers fetch error:', error);
@@ -614,20 +645,58 @@ app.post('/api/transfers/', async (req, res) => {
 });
 
 // Marketplace endpoints
-app.get('/api/marketplace/group-buys/', (req, res) => {
-  res.json([]);
+app.get('/api/marketplace/group-buys/', async (req, res) => {
+  try {
+    const businessId = getBusinessId(req);
+    const result = await pool.query(
+      'SELECT * FROM marketplace_groupbuy WHERE business_id = $1::bigint ORDER BY created_at DESC',
+      [businessId]
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Group buys fetch error:', error);
+    res.json([]);
+  }
 });
 
-app.get('/api/marketplace/suppliers/', (req, res) => {
-  res.json([]);
+app.get('/api/marketplace/suppliers/', async (req, res) => {
+  try {
+    const businessId = getBusinessId(req);
+    const result = await pool.query(
+      'SELECT * FROM marketplace_supplier WHERE business_id = $1::bigint ORDER BY name',
+      [businessId]
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Marketplace suppliers fetch error:', error);
+    res.json([]);
+  }
 });
 
-app.get('/api/marketplace/listings/my_listings/', (req, res) => {
-  res.json([]);
+app.get('/api/marketplace/listings/my_listings/', async (req, res) => {
+  try {
+    const businessId = getBusinessId(req);
+    const result = await pool.query(
+      'SELECT * FROM marketplace_listing WHERE business_id = $1::bigint ORDER BY created_at DESC',
+      [businessId]
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error('My listings fetch error:', error);
+    res.json([]);
+  }
 });
 
-app.get('/api/marketplace/listings/', (req, res) => {
-  res.json([]);
+app.get('/api/marketplace/listings/', async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT * FROM marketplace_listing WHERE is_active = true ORDER BY created_at DESC LIMIT 50'
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Listings fetch error:', error);
+    res.json([]);
+  }
 });
 
 // WhatsApp endpoints
