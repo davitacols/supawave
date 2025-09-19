@@ -190,4 +190,5 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`🔑 JWT_SECRET exists: ${!!process.env.JWT_SECRET}`);
   console.log(`🔑 Using JWT_SECRET: ${process.env.JWT_SECRET?.substring(0, 10)}...`);
   console.log(`🤖 Claude API Key configured: ${!!process.env.CLAUDE_API_KEY}`);
+  console.log(`🌍 Environment: ${process.env.NODE_ENV}`);
 });
