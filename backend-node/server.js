@@ -10,25 +10,31 @@ const PORT = process.env.PORT || 8000;
 
 // Middleware
 app.use(helmet());
-app.use(cors({
-  origin: true,
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
-}));
 
-// Additional CORS headers
+// Enhanced CORS configuration
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  const origin = req.headers.origin;
+  const allowedOrigins = [
+    'http://localhost:3000',
+    'https://supawave.vercel.app',
+    'https://supawave-frontend.vercel.app'
+  ];
+  
+  // Allow all origins in development or if origin is in allowed list
+  if (!origin || allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production') {
+    res.header('Access-Control-Allow-Origin', origin || '*');
+  }
+  
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
   res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Max-Age', '86400');
   
   if (req.method === 'OPTIONS') {
-    res.sendStatus(200);
-  } else {
-    next();
+    return res.status(200).end();
   }
+  
+  next();
 });
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -46,8 +52,15 @@ app.get('/api/debug', (req, res) => {
     message: 'Backend is working',
     timestamp: new Date().toISOString(),
     env: {
+      NODE_ENV: process.env.NODE_ENV,
       JWT_SECRET_EXISTS: !!process.env.JWT_SECRET,
-      DATABASE_URL_EXISTS: !!process.env.DATABASE_URL
+      DATABASE_URL_EXISTS: !!process.env.DATABASE_URL,
+      CLAUDE_API_KEY_EXISTS: !!process.env.CLAUDE_API_KEY
+    },
+    cors: {
+      origin: req.headers.origin,
+      method: req.method,
+      headers: req.headers
     }
   });
 });
@@ -98,6 +111,19 @@ app.post('/api/test-login', (req, res) => {
   res.json({ message: 'Test login endpoint working', body: req.body });
 });
 
+// Simple CORS test endpoint
+app.post('/api/cors-test', (req, res) => {
+  console.log('🌐 CORS test endpoint hit');
+  console.log('Origin:', req.headers.origin);
+  console.log('Method:', req.method);
+  res.json({ 
+    success: true, 
+    message: 'CORS is working',
+    origin: req.headers.origin,
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Quick login endpoint for testing
 app.post('/api/quick-login', (req, res) => {
   const { generateTokenPair } = require('./utils/tokenGenerator');
@@ -132,6 +158,16 @@ app.get('/api/test-staff-simple', (req, res) => {
 // Error handling
 app.use(errorLogger);
 app.use((err, req, res, next) => {
+  // Ensure CORS headers are set even for errors
+  const origin = req.headers.origin;
+  if (!res.headersSent) {
+    res.header('Access-Control-Allow-Origin', origin || '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
+    res.header('Access-Control-Allow-Credentials', 'true');
+  }
+  
+  console.error('Error occurred:', err);
   res.status(err.status || 500).json({ 
     error: process.env.NODE_ENV === 'production' 
       ? 'Something went wrong!' 

@@ -47,60 +47,16 @@ public class MainActivity extends AppCompatActivity {
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
                 
-                // Inject mobile fixes and demo login
-                String demoScript = 
+                // Initialize offline POS demo
+                String initScript = 
                     "(function() {" +
-                    "  var viewport = document.querySelector('meta[name=viewport]');" +
-                    "  if (!viewport) {" +
-                    "    viewport = document.createElement('meta');" +
-                    "    viewport.name = 'viewport';" +
-                    "    viewport.content = 'width=device-width, initial-scale=1.0, user-scalable=no';" +
-                    "    document.head.appendChild(viewport);" +
+                    "  console.log('SupaWave POS Demo Initialized');" +
+                    "  if (window.initPOSTerminal) {" +
+                    "    window.initPOSTerminal();" +
                     "  }" +
-                    "  document.body.style.touchAction = 'manipulation';" +
-                    "  var style = document.createElement('style');" +
-                    "  style.textContent = '* { -webkit-tap-highlight-color: transparent; }';" +
-                    "  document.head.appendChild(style);" +
-                    "  " +
-                    "  // Auto-login for demo with valid JWT" +
-                    "  setTimeout(function() {" +
-                    "    if (window.location.pathname === '/login' || document.querySelector('input[type=email]')) {" +
-                    "      // Create a valid-looking JWT token for demo" +
-                    "      var header = btoa(JSON.stringify({typ:'JWT',alg:'HS256'}));" +
-                    "      var payload = btoa(JSON.stringify({" +
-                    "        userId: 1, email: 'demo@supawave.com', role: 'owner'," +
-                    "        exp: Math.floor(Date.now()/1000) + 3600" +
-                    "      }));" +
-                    "      var signature = 'demo-signature';" +
-                    "      var token = header + '.' + payload + '.' + signature;" +
-                    "      " +
-                    "      localStorage.setItem('access_token', token);" +
-                    "      localStorage.setItem('user', JSON.stringify({" +
-                    "        id: 1, email: 'demo@supawave.com', first_name: 'Demo', last_name: 'User'" +
-                    "      }));" +
-                    "      " +
-                    "      // Override fetch to return demo data" +
-                    "      window.originalFetch = window.fetch;" +
-                    "      window.fetch = function(url, options) {" +
-                    "        if (url.includes('/api/')) {" +
-                    "          return Promise.resolve({" +
-                    "            ok: true," +
-                    "            json: () => Promise.resolve({" +
-                    "              data: { message: 'Demo mode - API calls mocked' }" +
-                    "            })" +
-                    "          });" +
-                    "        }" +
-                    "        return window.originalFetch(url, options);" +
-                    "      };" +
-                    "      " +
-                    "      if (window.location.pathname === '/login') {" +
-                    "        window.location.href = '/';" +
-                    "      }" +
-                    "    }" +
-                    "  }, 1000);" +
                     "})()";
                 
-                webView.evaluateJavascript(demoScript, null);
+                webView.evaluateJavascript(initScript, null);
                 
                 // Initialize POS if available
                 webView.evaluateJavascript(
@@ -110,8 +66,8 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        // Load SupaWave app with mobile fixes
-        webView.loadUrl("https://frontend-five-hazel-21.vercel.app");
+        // Load offline demo POS interface
+        webView.loadUrl("file:///android_asset/pos.html");
     }
 
     public class AndroidInterface {
