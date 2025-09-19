@@ -22,22 +22,44 @@ app.get('/', (req, res) => {
 });
 
 // Auth endpoints
+// Store registered users
+const registeredUsers = {};
+
 app.post('/api/auth/register', (req, res) => {
   const { business_name, username, email, password, first_name, last_name, phone_number } = req.body;
   
+  const newUserId = Date.now().toString();
+  const newBusinessId = (Date.now() + 1000).toString();
+  
+  // Store user data
+  registeredUsers[email] = {
+    id: newUserId,
+    username: username || 'newuser',
+    email: email,
+    first_name: first_name || 'New',
+    last_name: last_name || 'User',
+    phone_number: phone_number || '',
+    business_name: business_name || 'New Business',
+    role: 'owner',
+    business_id: newBusinessId,
+    registration_date: new Date().toISOString(),
+    subscription_status: 'trial',
+    trial_days_left: '14'
+  };
+  
   res.status(201).json({
     user: {
-      id: '1104518454268002305',
+      id: newUserId,
       username: username || 'newuser',
       email: email,
       first_name: first_name || 'New',
       last_name: last_name || 'User',
       role: 'owner',
-      business_id: '1104518460022685697'
+      business_id: newBusinessId
     },
     tokens: {
-      access: 'test-token',
-      refresh: 'test-refresh-token',
+      access: 'test-token-' + newUserId,
+      refresh: 'test-refresh-token-' + newUserId,
       expiresIn: 86400
     }
   });
@@ -72,6 +94,30 @@ app.post('/api/auth/logout', (req, res) => {
 });
 
 app.get('/api/auth/business', (req, res) => {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  
+  // Check if it's a registered user token
+  if (token && token.startsWith('test-token-')) {
+    const userId = token.replace('test-token-', '');
+    const user = Object.values(registeredUsers).find(u => u.id === userId);
+    
+    if (user) {
+      return res.json({
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        phone_number: user.phone_number,
+        business_name: user.business_name,
+        registration_date: user.registration_date,
+        subscription_status: user.subscription_status,
+        trial_days_left: user.trial_days_left
+      });
+    }
+  }
+  
+  // Default to existing user
   res.json({
     id: '1104518454268002305',
     username: 'campdavids',
