@@ -11,27 +11,15 @@ const PORT = process.env.PORT || 8000;
 // Middleware
 app.use(helmet());
 
-// Enhanced CORS configuration
+// Simple CORS middleware that always works
 app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  const allowedOrigins = [
-    'http://localhost:3000',
-    'https://supawave.vercel.app',
-    'https://supawave-frontend.vercel.app'
-  ];
-  
-  // Allow all origins in development or if origin is in allowed list
-  if (!origin || allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production') {
-    res.header('Access-Control-Allow-Origin', origin || '*');
-  }
-  
+  res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
   res.header('Access-Control-Allow-Credentials', 'true');
-  res.header('Access-Control-Max-Age', '86400');
   
   if (req.method === 'OPTIONS') {
-    return res.status(200).end();
+    return res.status(200).json({ message: 'CORS preflight OK' });
   }
   
   next();
@@ -84,8 +72,15 @@ app.get('/', (req, res) => {
   res.json({ 
     status: 'ok', 
     message: 'SupaWave Node.js API is running',
-    version: '1.0.0'
+    version: '1.0.0',
+    timestamp: new Date().toISOString(),
+    cors: 'enabled'
   });
+});
+
+// Simple test endpoint
+app.get('/test', (req, res) => {
+  res.json({ message: 'Test endpoint working', cors: 'OK' });
 });
 
 app.get('/api', (req, res) => {
