@@ -406,6 +406,21 @@ app.get('/api/customers/', async (req, res) => {
   }
 });
 
+app.post('/api/customers/', async (req, res) => {
+  try {
+    const businessId = getBusinessId(req);
+    const { name, email, phone, address } = req.body;
+    const result = await pool.query(
+      'INSERT INTO customers_customer (name, email, phone, address, business_id, created_at) VALUES ($1, $2, $3, $4, $5, NOW()) RETURNING *',
+      [name, email, phone, address, businessId]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    console.error('Customer creation error:', error);
+    res.status(500).json({ error: 'Failed to create customer' });
+  }
+});
+
 // Notifications
 app.get('/api/notifications/', async (req, res) => {
   try {
@@ -480,8 +495,21 @@ app.post('/api/auth/logout', (req, res) => {
   res.json({ message: 'Logged out successfully' });
 });
 
-app.get('/api/auth/staff', (req, res) => {
-  res.json([]);
+app.get('/api/auth/staff', async (req, res) => {
+  try {
+    const businessId = getBusinessId(req);
+    const result = await pool.query(
+      `SELECT id, username, first_name, last_name, email, phone_number, role, is_active_staff
+       FROM accounts_user 
+       WHERE business_id = $1 AND role IN ('manager', 'cashier')
+       ORDER BY first_name, last_name`,
+      [businessId]
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Staff fetch error:', error);
+    res.json([]);
+  }
 });
 
 // Invoice customers
@@ -498,25 +526,91 @@ app.get('/api/inventory/alerts/', (req, res) => {
   res.json([]);
 });
 
-app.get('/api/inventory/alerts/recommendations/', (req, res) => {
-  res.json([]);
+app.get('/api/inventory/alerts/recommendations/', async (req, res) => {
+  try {
+    const businessId = getBusinessId(req);
+    // Get products that need reordering (stock <= reorder level)
+    const result = await pool.query(
+      `SELECT p.*, 
+              (p.reorder_level - p.stock_quantity) as suggested_quantity,
+              CASE 
+                WHEN p.stock_quantity = 0 THEN 'out_of_stock'
+                WHEN p.stock_quantity <= p.reorder_level THEN 'low_stock'
+                ELSE 'normal'
+              END as status
+       FROM inventory_product p 
+       WHERE p.business_id = $1 AND p.stock_quantity <= p.reorder_level
+       ORDER BY p.stock_quantity ASC, p.name`,
+      [businessId]
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Smart reorder fetch error:', error);
+    res.json([]);
+  }
 });
 
 app.get('/api/inventory/purchase-orders/', (req, res) => {
   res.json([]);
 });
 
-app.get('/api/inventory/stock-takes/', (req, res) => {
-  res.json([]);
+app.get('/api/inventory/stock-takes/', async (req, res) => {
+  try {
+    const businessId = getBusinessId(req);
+    const result = await pool.query(
+      'SELECT * FROM inventory_stocktake WHERE business_id = $1 ORDER BY created_at DESC',
+      [businessId]
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Stock takes fetch error:', error);
+    res.json([]);
+  }
+});
+
+app.post('/api/inventory/stock-takes/', async (req, res) => {
+  try {
+    const businessId = getBusinessId(req);
+    const { name, notes } = req.body;
+    const result = await pool.query(
+      'INSERT INTO inventory_stocktake (name, notes, business_id, status, created_at) VALUES ($1, $2, $3, $4, NOW()) RETURNING *',
+      [name, notes, businessId, 'in_progress']
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    console.error('Stock take creation error:', error);
+    res.status(500).json({ error: 'Failed to create stock take' });
+  }
 });
 
 // Transfers
-app.get('/api/transfers/', (req, res) => {
-  res.json([]);
+app.get('/api/transfers/', async (req, res) => {
+  try {
+    const businessId = getBusinessId(req);
+    const result = await pool.query(
+      'SELECT * FROM inventory_transfer WHERE business_id = $1 ORDER BY created_at DESC',
+      [businessId]
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Transfers fetch error:', error);
+    res.json([]);
+  }
 });
 
-app.post('/api/transfers/', (req, res) => {
-  res.status(201).json({ message: 'Transfer created successfully' });
+app.post('/api/transfers/', async (req, res) => {
+  try {
+    const businessId = getBusinessId(req);
+    const { from_store_id, to_store_id, product_id, quantity, notes } = req.body;
+    const result = await pool.query(
+      'INSERT INTO inventory_transfer (from_store_id, to_store_id, product_id, quantity, notes, business_id, status, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW()) RETURNING *',
+      [from_store_id, to_store_id, product_id, quantity, notes, businessId, 'pending']
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    console.error('Transfer creation error:', error);
+    res.status(500).json({ error: 'Failed to create transfer' });
+  }
 });
 
 // Marketplace endpoints
@@ -574,8 +668,33 @@ app.get('/api/invoices/', (req, res) => {
   res.json([]);
 });
 
-app.get('/api/stores/', (req, res) => {
-  res.json([]);
+app.get('/api/stores/', async (req, res) => {
+  try {
+    const businessId = getBusinessId(req);
+    const result = await pool.query(
+      'SELECT * FROM stores_store WHERE business_id = $1 ORDER BY name',
+      [businessId]
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Stores fetch error:', error);
+    res.json([]);
+  }
+});
+
+app.post('/api/stores/', async (req, res) => {
+  try {
+    const businessId = getBusinessId(req);
+    const { name, address, phone, manager_id } = req.body;
+    const result = await pool.query(
+      'INSERT INTO stores_store (name, address, phone, manager_id, business_id, is_active, created_at) VALUES ($1, $2, $3, $4, $5, true, NOW()) RETURNING *',
+      [name, address, phone, manager_id, businessId]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    console.error('Store creation error:', error);
+    res.status(500).json({ error: 'Failed to create store' });
+  }
 });
 
 app.get('/api/reports/daily/', (req, res) => {
