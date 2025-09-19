@@ -484,6 +484,76 @@ app.get('/api/auth/staff', (req, res) => {
   res.json([]);
 });
 
+// Invoice customers
+app.get('/api/invoices/customers/', (req, res) => {
+  res.json([]);
+});
+
+app.post('/api/invoices/customers/', (req, res) => {
+  res.status(201).json({ message: 'Customer created successfully' });
+});
+
+// Inventory alerts and recommendations
+app.get('/api/inventory/alerts/', (req, res) => {
+  res.json([]);
+});
+
+app.get('/api/inventory/alerts/recommendations/', (req, res) => {
+  res.json([]);
+});
+
+app.get('/api/inventory/purchase-orders/', (req, res) => {
+  res.json([]);
+});
+
+app.get('/api/inventory/stock-takes/', (req, res) => {
+  res.json([]);
+});
+
+// Transfers
+app.get('/api/transfers/', (req, res) => {
+  res.json([]);
+});
+
+app.post('/api/transfers/', (req, res) => {
+  res.status(201).json({ message: 'Transfer created successfully' });
+});
+
+// Marketplace endpoints
+app.get('/api/marketplace/group-buys/', (req, res) => {
+  res.json([]);
+});
+
+app.get('/api/marketplace/suppliers/', (req, res) => {
+  res.json([]);
+});
+
+app.get('/api/marketplace/listings/my_listings/', (req, res) => {
+  res.json([]);
+});
+
+app.get('/api/marketplace/listings/', (req, res) => {
+  res.json([]);
+});
+
+// WhatsApp endpoints
+app.get('/api/whatsapp/config/', (req, res) => {
+  res.json({ config: {} });
+});
+
+app.put('/api/whatsapp/config/', (req, res) => {
+  res.json({ message: 'WhatsApp config updated' });
+});
+
+app.get('/api/whatsapp/templates/', (req, res) => {
+  res.json([]);
+});
+
+app.get('/api/whatsapp/messages/', (req, res) => {
+  res.json([]);
+});
+
+// Other missing endpoints
 app.post('/api/inventory/categories/', (req, res) => {
   res.status(201).json({ message: 'Category created successfully' });
 });
@@ -505,10 +575,6 @@ app.get('/api/invoices/', (req, res) => {
 });
 
 app.get('/api/stores/', (req, res) => {
-  res.json([]);
-});
-
-app.get('/api/marketplace/listings/', (req, res) => {
   res.json([]);
 });
 
