@@ -1,35 +1,26 @@
 const express = require('express');
 const cors = require('cors');
-const helmet = require('helmet');
-const { requestLogger, errorLogger } = require('./middleware/logger');
-const { apiLimiter, authLimiter } = require('./middleware/rateLimiter');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 8000;
 
-// Middleware
-app.use(helmet());
-
 // Simple CORS middleware that always works
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  
-  if (req.method === 'OPTIONS') {
-    return res.status(200).json({ message: 'CORS preflight OK' });
-  }
-  
-  next();
-});
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+  credentials: true
+}));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Middleware
-app.use(requestLogger);
-// app.use(apiLimiter); // Temporarily disabled for testing
+// Simple logging
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} ${req.method} ${req.path}`);
+  next();
+});
 
 // Routes (temporarily disable auth rate limiting for testing)
 app.use('/api/auth', require('./routes/auth'));
@@ -151,17 +142,7 @@ app.get('/api/test-staff-simple', (req, res) => {
 });
 
 // Error handling
-app.use(errorLogger);
 app.use((err, req, res, next) => {
-  // Ensure CORS headers are set even for errors
-  const origin = req.headers.origin;
-  if (!res.headersSent) {
-    res.header('Access-Control-Allow-Origin', origin || '*');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
-    res.header('Access-Control-Allow-Credentials', 'true');
-  }
-  
   console.error('Error occurred:', err);
   res.status(err.status || 500).json({ 
     error: process.env.NODE_ENV === 'production' 
