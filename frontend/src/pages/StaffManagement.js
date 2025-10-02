@@ -1,16 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { 
   PlusIcon, PencilIcon, TrashIcon, EyeIcon, UserGroupIcon,
-  ShieldCheckIcon, ClockIcon, CalendarIcon, ChartBarIcon,
-  CheckCircleIcon, XCircleIcon, KeyIcon, MagnifyingGlassIcon
+  ShieldCheckIcon, ClockIcon, CheckCircleIcon, KeyIcon, MagnifyingGlassIcon
 } from '@heroicons/react/24/outline';
-import { authAPI, salesAPI } from '../utils/api';
-import { Card } from '../components/ui/Card';
-import { Button } from '../components/ui/Button';
-import { Input } from '../components/ui/Input';
-import { Badge } from '../components/ui/Badge';
-import { Table } from '../components/ui/Table';
-import { Modal } from '../components/ui/Modal';
+import { authAPI } from '../utils/api';
 
 const StaffManagement = () => {
   const [staff, setStaff] = useState([]);
@@ -50,9 +43,6 @@ const StaffManagement = () => {
   const fetchStaff = async () => {
     try {
       const response = await authAPI.getStaff();
-      console.log('Staff API response:', response);
-      
-      // Handle different response structures
       let staffData = [];
       if (response?.data?.results) {
         staffData = response.data.results;
@@ -68,7 +58,6 @@ const StaffManagement = () => {
         staffData = response;
       }
       
-      console.log('Processed staff data:', staffData);
       setStaff(Array.isArray(staffData) ? staffData : []);
     } catch (error) {
       console.error('Error fetching staff:', error);
@@ -79,8 +68,6 @@ const StaffManagement = () => {
   const fetchStaffActivity = async (staffId) => {
     try {
       setLoading(true);
-      // This would be implemented in the backend
-      // For now, we'll simulate activity data
       const mockActivity = [
         { id: 1, action: 'Login', timestamp: new Date().toISOString(), details: 'Logged into system' },
         { id: 2, action: 'Sale', timestamp: new Date(Date.now() - 3600000).toISOString(), details: 'Processed sale #12345 - ₦15,000' },
@@ -113,7 +100,6 @@ const StaffManagement = () => {
         submitData = formDataWithImage;
       }
       
-      console.log('Submitting staff data:', submitData);
       if (editingStaff) {
         await authAPI.updateStaff(editingStaff.id, submitData);
       } else {
@@ -124,7 +110,6 @@ const StaffManagement = () => {
       resetForm();
     } catch (error) {
       console.error('Error saving staff:', error);
-      console.error('Error response:', error.response);
       
       let errorMessage = 'Error saving staff member';
       if (error.response?.data) {
@@ -153,15 +138,6 @@ const StaffManagement = () => {
         console.error('Error deleting staff:', error);
         alert('Error removing staff member');
       }
-    }
-  };
-
-  const toggleStaffStatus = async (staffId, currentStatus) => {
-    try {
-      await authAPI.updateStaff(staffId, { is_active_staff: !currentStatus });
-      fetchStaff();
-    } catch (error) {
-      console.error('Error updating staff status:', error);
     }
   };
 
@@ -246,28 +222,6 @@ const StaffManagement = () => {
     return filtered;
   };
 
-  const getRoleColor = (role) => {
-    switch (role) {
-      case 'owner': return 'bg-purple-100 text-purple-800';
-      case 'manager': return 'bg-blue-100 text-blue-800';
-      case 'cashier': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getRolePermissions = (role) => {
-    switch (role) {
-      case 'owner':
-        return ['All Permissions', 'Full System Access'];
-      case 'manager':
-        return ['View Reports', 'Manage Inventory', 'Process Returns', 'Give Discounts', 'Manage Customers'];
-      case 'cashier':
-        return ['Process Sales', 'View Products', 'Basic Operations'];
-      default:
-        return [];
-    }
-  };
-
   const tabs = [
     { id: 'staff', name: 'Staff Members', icon: UserGroupIcon, count: Array.isArray(staff) ? staff.length : 0 },
     { id: 'roles', name: 'Roles & Permissions', icon: ShieldCheckIcon, count: 3 },
@@ -275,23 +229,26 @@ const StaffManagement = () => {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 space-y-6">
       {/* Header */}
-      <Card>
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start space-y-4 sm:space-y-0">
           <div>
-            <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">Staff Management</h1>
-            <p className="text-gray-600 mt-1 text-sm sm:text-base">Manage team members, roles, and permissions</p>
+            <h1 className="text-2xl font-semibold text-gray-900">Staff Management</h1>
+            <p className="text-gray-600 mt-1">Manage team members, roles, and permissions</p>
           </div>
-          <Button onClick={() => openModal()} className="flex items-center space-x-2">
-            <PlusIcon className="h-4 w-4" />
-            <span>Add Staff Member</span>
-          </Button>
+          <button 
+            onClick={() => openModal()}
+            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <PlusIcon className="h-4 w-4 mr-2" />
+            Add Staff Member
+          </button>
         </div>
-      </Card>
+      </div>
 
       {/* Tabs */}
-      <Card>
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
         <div className="border-b border-gray-200">
           <nav className="flex space-x-8 px-6 overflow-x-auto">
             {tabs.map((tab) => (
@@ -306,14 +263,14 @@ const StaffManagement = () => {
               >
                 <tab.icon className="h-5 w-5" />
                 <span>{tab.name}</span>
-                <Badge variant="secondary" className="ml-2">
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                   {tab.count}
-                </Badge>
+                </span>
               </button>
             ))}
           </nav>
         </div>
-      </Card>
+      </div>
 
       {/* Content */}
       {activeTab === 'staff' && (
@@ -325,7 +282,6 @@ const StaffManagement = () => {
           setRoleFilter={setRoleFilter}
           onEdit={openModal}
           onDelete={handleDelete}
-          onToggleStatus={toggleStaffStatus}
           onViewActivity={openActivityModal}
         />
       )}
@@ -361,23 +317,26 @@ const StaffManagement = () => {
 
 const StaffTab = ({ 
   staff, searchTerm, setSearchTerm, roleFilter, setRoleFilter,
-  onEdit, onDelete, onToggleStatus, onViewActivity 
+  onEdit, onDelete, onViewActivity 
 }) => (
   <div className="space-y-6">
     {/* Filters */}
-    <div className="bg-white p-4 shadow rounded-lg">
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <input
-          type="text"
-          placeholder="Search staff members..."
-          className="w-full pl-4 pr-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
+        <div className="relative">
+          <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search staff members..."
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
         <select
           value={roleFilter}
           onChange={(e) => setRoleFilter(e.target.value)}
-          className="w-full border border-gray-300 px-3 py-2 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white"
+          className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white"
         >
           <option value="all">All Roles</option>
           <option value="owner">Owner</option>
@@ -388,7 +347,7 @@ const StaffTab = ({
     </div>
 
     {/* Staff List */}
-    <Card>
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200">
       <div className="px-6 py-4 border-b border-gray-200">
         <h2 className="text-lg font-medium text-gray-900">Team Members ({staff.length})</h2>
       </div>
@@ -402,10 +361,10 @@ const StaffTab = ({
       ) : (
         <div className="divide-y divide-gray-200">
           {staff.map((member) => (
-            <div key={member.id} className="p-6 hover:bg-gray-50">
+            <div key={member.id} className="p-6 hover:bg-gray-50 transition-colors">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center text-gray-600 font-medium overflow-hidden">
+                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-medium overflow-hidden">
                     {member.profile_image ? (
                       <img src={member.profile_image} alt="Profile" className="w-full h-full object-cover" />
                     ) : (
@@ -417,9 +376,13 @@ const StaffTab = ({
                       <h3 className="text-lg font-medium text-gray-900">
                         {member.first_name} {member.last_name}
                       </h3>
-                      <Badge variant={member.role === 'owner' ? 'primary' : member.role === 'manager' ? 'secondary' : 'default'}>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        member.role === 'owner' ? 'bg-purple-100 text-purple-800' :
+                        member.role === 'manager' ? 'bg-blue-100 text-blue-800' :
+                        'bg-green-100 text-green-800'
+                      }`}>
                         {member.role?.toUpperCase()}
-                      </Badge>
+                      </span>
                     </div>
                     <div className="flex items-center space-x-4 mt-1 text-sm text-gray-500">
                       <span>@{member.username}</span>
@@ -431,9 +394,11 @@ const StaffTab = ({
                 
                 <div className="flex items-center space-x-6">
                   <div className="text-right">
-                    <Badge variant={member.is_active_staff ? 'success' : 'error'}>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      member.is_active_staff ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    }`}>
                       {member.is_active_staff ? 'Active' : 'Inactive'}
-                    </Badge>
+                    </span>
                     <p className="text-xs text-gray-500 mt-1">
                       Last: {member.last_login ? new Date(member.last_login).toLocaleDateString() : 'Never'}
                     </p>
@@ -442,21 +407,21 @@ const StaffTab = ({
                   <div className="flex space-x-2">
                     <button
                       onClick={() => onViewActivity(member)}
-                      className="p-2 text-gray-400 hover:text-blue-600"
+                      className="p-2 text-gray-400 hover:text-blue-600 rounded-lg hover:bg-blue-50 transition-colors"
                       title="View Activity"
                     >
                       <ClockIcon className="h-4 w-4" />
                     </button>
                     <button
                       onClick={() => onEdit(member)}
-                      className="p-2 text-gray-400 hover:text-blue-600"
+                      className="p-2 text-gray-400 hover:text-blue-600 rounded-lg hover:bg-blue-50 transition-colors"
                       title="Edit Staff"
                     >
                       <PencilIcon className="h-4 w-4" />
                     </button>
                     <button
                       onClick={() => onDelete(member.id)}
-                      className="p-2 text-gray-400 hover:text-red-600"
+                      className="p-2 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors"
                       title="Remove Staff"
                     >
                       <TrashIcon className="h-4 w-4" />
@@ -468,21 +433,12 @@ const StaffTab = ({
           ))}
         </div>
       )}
-    </Card>
+    </div>
   </div>
 );
 
-const getRoleColor = (role) => {
-  switch (role) {
-    case 'owner': return 'bg-purple-100 text-purple-800';
-    case 'manager': return 'bg-blue-100 text-blue-800';
-    case 'cashier': return 'bg-green-100 text-green-800';
-    default: return 'bg-gray-100 text-gray-800';
-  }
-};
-
 const RolesTab = () => (
-  <Card>
+  <div className="bg-white rounded-lg shadow-sm border border-gray-200">
     <div className="px-6 py-4 border-b border-gray-200">
       <h2 className="text-lg font-medium text-gray-900">Roles & Permissions</h2>
     </div>
@@ -508,9 +464,17 @@ const RolesTab = () => (
             color: 'green'
           }
         ].map((roleInfo, index) => (
-          <Card key={index} className="p-6">
+          <div key={index} className="bg-white border border-gray-200 rounded-lg p-6">
             <div className="flex items-center space-x-3 mb-4">
-              <ShieldCheckIcon className="h-8 w-8 text-gray-600" />
+              <div className={`p-2 rounded-lg ${
+                roleInfo.color === 'purple' ? 'bg-purple-100' :
+                roleInfo.color === 'blue' ? 'bg-blue-100' : 'bg-green-100'
+              }`}>
+                <ShieldCheckIcon className={`h-6 w-6 ${
+                  roleInfo.color === 'purple' ? 'text-purple-600' :
+                  roleInfo.color === 'blue' ? 'text-blue-600' : 'text-green-600'
+                }`} />
+              </div>
               <div>
                 <h3 className="text-lg font-medium text-gray-900">{roleInfo.role}</h3>
                 <p className="text-sm text-gray-500">{roleInfo.description}</p>
@@ -527,15 +491,15 @@ const RolesTab = () => (
                 ))}
               </ul>
             </div>
-          </Card>
+          </div>
         ))}
       </div>
     </div>
-  </Card>
+  </div>
 );
 
 const ActivityTab = () => (
-  <Card>
+  <div className="bg-white rounded-lg shadow-sm border border-gray-200">
     <div className="px-6 py-4 border-b border-gray-200">
       <h2 className="text-lg font-medium text-gray-900">Recent Activity</h2>
     </div>
@@ -546,14 +510,14 @@ const ActivityTab = () => (
         <p className="text-gray-500">Staff activity logs will appear here</p>
       </div>
     </div>
-  </Card>
+  </div>
 );
 
 const StaffModal = ({ formData, setFormData, editingStaff, onSubmit, onClose, loading, onImageChange, imagePreview }) => (
   <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div className="bg-white w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+    <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
       <div className="p-6 border-b border-gray-200">
-        <h2 className="text-xl font-bold">
+        <h2 className="text-xl font-semibold text-gray-900">
           {editingStaff ? 'Edit Staff Member' : 'Add New Staff Member'}
         </h2>
       </div>
@@ -563,7 +527,7 @@ const StaffModal = ({ formData, setFormData, editingStaff, onSubmit, onClose, lo
         <div>
           <h3 className="text-lg font-medium mb-4">Profile Photo</h3>
           <div className="flex items-center space-x-6">
-            <div className="w-20 h-20 border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden">
+            <div className="w-20 h-20 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center overflow-hidden">
               {imagePreview ? (
                 <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
               ) : (
@@ -580,7 +544,7 @@ const StaffModal = ({ formData, setFormData, editingStaff, onSubmit, onClose, lo
               />
               <label
                 htmlFor="profile-image"
-                className="cursor-pointer bg-blue-600 text-white px-4 py-2 hover:bg-blue-700"
+                className="cursor-pointer bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
               >
                 Upload Photo
               </label>
@@ -598,7 +562,7 @@ const StaffModal = ({ formData, setFormData, editingStaff, onSubmit, onClose, lo
               placeholder="First Name"
               value={formData.first_name}
               onChange={(e) => setFormData({...formData, first_name: e.target.value})}
-              className="border border-gray-300 px-3 py-2"
+              className="border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               required
             />
             <input
@@ -606,7 +570,7 @@ const StaffModal = ({ formData, setFormData, editingStaff, onSubmit, onClose, lo
               placeholder="Last Name"
               value={formData.last_name}
               onChange={(e) => setFormData({...formData, last_name: e.target.value})}
-              className="border border-gray-300 px-3 py-2"
+              className="border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               required
             />
             <input
@@ -614,7 +578,7 @@ const StaffModal = ({ formData, setFormData, editingStaff, onSubmit, onClose, lo
               placeholder="Username"
               value={formData.username}
               onChange={(e) => setFormData({...formData, username: e.target.value})}
-              className="border border-gray-300 px-3 py-2"
+              className="border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               required
             />
             <input
@@ -622,7 +586,7 @@ const StaffModal = ({ formData, setFormData, editingStaff, onSubmit, onClose, lo
               placeholder="Email"
               value={formData.email}
               onChange={(e) => setFormData({...formData, email: e.target.value})}
-              className="border border-gray-300 px-3 py-2"
+              className="border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               required
             />
             <input
@@ -630,12 +594,12 @@ const StaffModal = ({ formData, setFormData, editingStaff, onSubmit, onClose, lo
               placeholder="Phone Number"
               value={formData.phone_number}
               onChange={(e) => setFormData({...formData, phone_number: e.target.value})}
-              className="border border-gray-300 px-3 py-2"
+              className="border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
             <select
               value={formData.role}
               onChange={(e) => setFormData({...formData, role: e.target.value})}
-              className="border border-gray-300 px-3 py-2"
+              className="border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="cashier">Cashier</option>
               <option value="manager">Manager</option>
@@ -651,7 +615,7 @@ const StaffModal = ({ formData, setFormData, editingStaff, onSubmit, onClose, lo
             placeholder={editingStaff ? "New Password (leave blank to keep current)" : "Password"}
             value={formData.password}
             onChange={(e) => setFormData({...formData, password: e.target.value})}
-            className="w-full border border-gray-300 px-3 py-2"
+            className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             required={!editingStaff}
           />
         </div>
@@ -670,7 +634,7 @@ const StaffModal = ({ formData, setFormData, editingStaff, onSubmit, onClose, lo
                       ...formData,
                       permissions: { ...formData.permissions, [key]: e.target.checked }
                     })}
-                    className="h-4 w-4 text-blue-600"
+                    className="h-4 w-4 text-blue-600 rounded"
                   />
                   <span className="text-sm text-gray-700">
                     {key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
@@ -686,14 +650,14 @@ const StaffModal = ({ formData, setFormData, editingStaff, onSubmit, onClose, lo
           <button
             type="submit"
             disabled={loading}
-            className="flex-1 bg-blue-600 text-white py-2 hover:bg-blue-700 disabled:opacity-50"
+            className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
           >
             {loading ? 'Saving...' : (editingStaff ? 'Update Staff' : 'Add Staff')}
           </button>
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 bg-gray-300 text-gray-700 py-2 hover:bg-gray-400"
+            className="flex-1 bg-gray-100 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors"
           >
             Cancel
           </button>
@@ -705,11 +669,11 @@ const StaffModal = ({ formData, setFormData, editingStaff, onSubmit, onClose, lo
 
 const ActivityModal = ({ staff, activity, onClose, loading }) => (
   <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div className="bg-white w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+    <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
       <div className="p-6 border-b border-gray-200">
         <div className="flex justify-between items-center">
-          <h2 className="text-xl font-bold">Activity Log - {staff.first_name} {staff.last_name}</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">✕</button>
+          <h2 className="text-xl font-semibold text-gray-900">Activity Log - {staff.first_name} {staff.last_name}</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl">×</button>
         </div>
       </div>
       
@@ -726,7 +690,7 @@ const ActivityModal = ({ staff, activity, onClose, loading }) => (
         ) : (
           <div className="space-y-4">
             {activity.map((item) => (
-              <div key={item.id} className="flex items-start space-x-3 p-3 bg-gray-50">
+              <div key={item.id} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
                 <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
                 <div className="flex-1">
                   <div className="flex justify-between items-start">

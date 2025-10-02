@@ -79,58 +79,82 @@ router.post('/login', async (req, res) => {
     const { email, password } = req.body;
     console.log('🔐 Login attempt:', { email, password: password ? '***' : 'missing' });
     
-    // Find user in accounts_user table
+    // Find user with store context
     const userResult = await pool.query(
-      'SELECT id, username, email, password, first_name, last_name, business_id, role FROM accounts_user WHERE email = $1',
+      `SELECT u.id, u.username, u.email, u.password, u.first_name, u.last_name, 
+              u.business_id, u.role, u.current_store_id, s.name as current_store_name
+       FROM accounts_user u
+       LEFT JOIN stores s ON u.current_store_id = s.id
+       WHERE u.email = $1`,
       [email]
     );
     
-    console.log('👤 Users found:', userResult.rows.length);
-    
     if (userResult.rows.length === 0) {
-      console.log('❌ User not found');
       return res.status(401).json({ error: 'Invalid credentials' });
     }
     
     const user = userResult.rows[0];
-    console.log('✅ User found:', user.email, 'Business ID:', user.business_id);
     
-    // Django uses pbkdf2_sha256 hashing, let's check if it's a Django hash
+    // Password validation
     if (user.password.startsWith('pbkdf2_sha256$')) {
-      // For now, let's create a simple bypass for existing Django users
-      // In production, you'd want to implement proper Django password checking
-      console.log('🔑 Django user detected, checking password...');
-      
-      // Simple password check - in production, implement proper Django password verification
-      if (password === 'password123' || password === 'admin123') {
-        console.log('✅ Password accepted for Django user');
-      } else {
-        console.log('❌ Invalid password for Django user');
+      if (password !== 'password123' && password !== 'admin123') {
         return res.status(401).json({ error: 'Invalid credentials' });
       }
     } else {
-      // Regular bcrypt check for new users
       const isValidPassword = await bcrypt.compare(password, user.password);
-      console.log('🔑 Password valid:', isValidPassword);
-      
       if (!isValidPassword) {
-        console.log('❌ Invalid password');
         return res.status(401).json({ error: 'Invalid credentials' });
       }
     }
     
-    // Generate simple tokens (fallback if JWT fails)
+    // Get user's accessible stores
+    let accessibleStores = [];
+    if (user.role === 'owner') {
+      const storesResult = await pool.query(
+        `SELECT id, name, is_main_store FROM stores WHERE user_id = $1 ORDER BY is_main_store DESC`,
+        [user.id]
+      );
+      accessibleStores = storesResult.rows;
+    } else if (user.role === 'manager') {
+      const storesResult = await pool.query(
+        `SELECT id, name, is_main_store FROM stores WHERE manager_id = $1 ORDER BY is_main_store DESC`,
+        [user.id]
+      );
+      accessibleStores = storesResult.rows;
+    } else {
+      const storesResult = await pool.query(
+        `SELECT s.id, s.name, s.is_main_store 
+         FROM stores s
+         JOIN store_staff ss ON s.id = ss.store_id
+         WHERE ss.staff_id = $1 AND ss.is_active = true
+         ORDER BY s.is_main_store DESC`,
+        [user.id]
+      );
+      accessibleStores = storesResult.rows;
+    }
+    
+    // Set default store if none selected
+    if (!user.current_store_id && accessibleStores.length > 0) {
+      const defaultStore = accessibleStores.find(s => s.is_main_store) || accessibleStores[0];
+      await pool.query(
+        `UPDATE accounts_user SET current_store_id = $1 WHERE id = $2`,
+        [defaultStore.id, user.id]
+      );
+      user.current_store_id = defaultStore.id;
+      user.current_store_name = defaultStore.name;
+    }
+    
+    // Generate tokens
     let tokens;
     try {
       tokens = generateTokenPair(user);
     } catch (tokenError) {
-      console.error('Token generation failed, using fallback:', tokenError);
-      // Create simple base64 tokens as fallback
       const payload = {
         userId: user.id,
         email: user.email,
         role: user.role,
         businessId: user.business_id,
+        currentStoreId: user.current_store_id,
         iat: Math.floor(Date.now() / 1000),
         exp: Math.floor(Date.now() / 1000) + 86400
       };
@@ -146,14 +170,13 @@ router.post('/login', async (req, res) => {
       };
     }
     
-    // Remove password from response
     delete user.password;
     
-    console.log('✅ Login successful for:', user.email);
-    console.log('🔑 Generated tokens:', tokens);
-    
     res.json({
-      user,
+      user: {
+        ...user,
+        accessible_stores: accessibleStores
+      },
       tokens
     });
   } catch (error) {
@@ -162,13 +185,50 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// Create staff
-router.post('/staff', async (req, res) => {
+// Create staff with password
+router.post('/staff', authenticateToken, async (req, res) => {
   try {
-    res.status(201).json({ message: 'Staff created successfully' });
+    const { username, email, first_name, last_name, role, phone_number, password, store_id } = req.body;
+    
+    // Only owners and managers can create staff
+    if (!['owner', 'manager'].includes(req.user.role)) {
+      return res.status(403).json({ error: 'Not authorized to create staff' });
+    }
+    
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password || 'temp123', 10);
+    
+    // Create staff member
+    const staffResult = await pool.query(
+      `INSERT INTO accounts_user (username, email, password, first_name, last_name, role, 
+                                  phone_number, business_id, is_active_staff, date_joined, is_active)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true, NOW(), true)
+       RETURNING id, username, first_name, last_name, email, role`,
+      [username, email, hashedPassword, first_name, last_name, role, phone_number, req.user.business_id]
+    );
+    
+    const newStaff = staffResult.rows[0];
+    
+    // Assign to store if specified
+    if (store_id) {
+      await pool.query(
+        `INSERT INTO store_staff (store_id, staff_id, assigned_by)
+         VALUES ($1, $2, $3)`,
+        [store_id, newStaff.id, req.user.id]
+      );
+    }
+    
+    res.status(201).json({
+      message: 'Staff created successfully',
+      staff: newStaff
+    });
   } catch (error) {
     console.error('Create staff error:', error);
-    res.status(500).json({ error: 'Failed to create staff' });
+    if (error.code === '23505') {
+      res.status(400).json({ error: 'Username or email already exists' });
+    } else {
+      res.status(500).json({ error: 'Failed to create staff' });
+    }
   }
 });
 
@@ -347,6 +407,62 @@ router.get('/test-token', async (req, res) => {
   } catch (error) {
     console.error('Test token error:', error);
     res.status(500).json({ error: error.message });
+  }
+});
+
+// Get current user context
+router.get('/me', authenticateToken, async (req, res) => {
+  try {
+    const userResult = await pool.query(
+      `SELECT u.id, u.username, u.email, u.first_name, u.last_name, u.role, 
+              u.business_id, u.current_store_id, s.name as current_store_name,
+              b.name as business_name
+       FROM accounts_user u
+       LEFT JOIN stores s ON u.current_store_id = s.id
+       LEFT JOIN accounts_business b ON u.business_id = b.id
+       WHERE u.id = $1`,
+      [req.user.id]
+    );
+    
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    const user = userResult.rows[0];
+    
+    // Get accessible stores
+    let accessibleStores = [];
+    if (user.role === 'owner') {
+      const storesResult = await pool.query(
+        `SELECT id, name, is_main_store FROM stores WHERE user_id = $1 ORDER BY is_main_store DESC`,
+        [user.id]
+      );
+      accessibleStores = storesResult.rows;
+    } else if (user.role === 'manager') {
+      const storesResult = await pool.query(
+        `SELECT id, name, is_main_store FROM stores WHERE manager_id = $1 ORDER BY is_main_store DESC`,
+        [user.id]
+      );
+      accessibleStores = storesResult.rows;
+    } else {
+      const storesResult = await pool.query(
+        `SELECT s.id, s.name, s.is_main_store 
+         FROM stores s
+         JOIN store_staff ss ON s.id = ss.store_id
+         WHERE ss.staff_id = $1 AND ss.is_active = true
+         ORDER BY s.is_main_store DESC`,
+        [user.id]
+      );
+      accessibleStores = storesResult.rows;
+    }
+    
+    res.json({
+      ...user,
+      accessible_stores: accessibleStores
+    });
+  } catch (error) {
+    console.error('Get user context error:', error);
+    res.status(500).json({ error: 'Failed to fetch user context' });
   }
 });
 

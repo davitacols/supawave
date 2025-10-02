@@ -28,11 +28,16 @@ import PaymentCallback from './pages/PaymentCallback';
 import SmartReorder from './pages/SmartReorder';
 import Marketplace from './pages/Marketplace';
 import AICoach from './pages/AICoach';
+import Notifications from './pages/Notifications';
+import FinancialDashboard from './pages/FinancialDashboard';
+import ExpenseManagement from './pages/ExpenseManagement';
+import AdvancedReports from './pages/AdvancedReports';
 // import PaymentTest from './pages/PaymentTest'; // Unused
 import Layout from './components/Layout';
 import PWAInstaller from './components/PWAInstaller';
 import OfflineIndicator from './components/OfflineIndicator';
 import { ToastContainer } from './components/ui/Toast';
+import { StoreProvider } from './contexts/StoreContext';
 
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem('access_token');
@@ -48,7 +53,8 @@ function App() {
   }, []);
 
   return (
-    <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+    <StoreProvider>
+      <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
@@ -222,11 +228,40 @@ function App() {
             </Layout>
           </ProtectedRoute>
         } />
+        <Route path="/notifications" element={
+          <ProtectedRoute>
+            <Layout>
+              <Notifications />
+            </Layout>
+          </ProtectedRoute>
+        } />
+        <Route path="/finance" element={
+          <ProtectedRoute>
+            <Layout>
+              <FinancialDashboard />
+            </Layout>
+          </ProtectedRoute>
+        } />
+        <Route path="/expenses" element={
+          <ProtectedRoute>
+            <Layout>
+              <ExpenseManagement />
+            </Layout>
+          </ProtectedRoute>
+        } />
+        <Route path="/advanced-reports" element={
+          <ProtectedRoute>
+            <Layout>
+              <AdvancedReports />
+            </Layout>
+          </ProtectedRoute>
+        } />
       </Routes>
-      <PWAInstaller />
-      <OfflineIndicator />
-      <ToastContainer />
-    </Router>
+        <PWAInstaller />
+        <OfflineIndicator />
+        <ToastContainer />
+      </Router>
+    </StoreProvider>
   );
 }
 

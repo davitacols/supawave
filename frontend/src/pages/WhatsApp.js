@@ -17,7 +17,7 @@ const WhatsApp = () => {
 
   const fetchData = async () => {
     try {
-      const configRes = await whatsappAPI.getConfig();
+      const configRes = await whatsappAPI.getIntegration();
       setConfig(configRes.data || { phone_number: '', is_active: false });
       
       const messagesRes = await whatsappAPI.getMessages();
@@ -32,7 +32,7 @@ const WhatsApp = () => {
   const handleConfigSave = async () => {
     try {
       setLoading(true);
-      await whatsappAPI.updateConfig(config);
+      await whatsappAPI.updateIntegration(config);
       showToast('Configuration saved successfully!', 'success');
     } catch (error) {
       showToast('Failed to save configuration', 'error');
@@ -51,7 +51,7 @@ const WhatsApp = () => {
 
     try {
       setLoading(true);
-      const response = await whatsappAPI.sendPromotion({
+      const response = await whatsappAPI.sendMessage({
         phone_numbers: phoneNumbers,
         message: promotionData.message
       });

@@ -5,8 +5,6 @@ import {
   DevicePhoneMobileIcon, EnvelopeIcon, PrinterIcon
 } from '@heroicons/react/24/outline';
 import { authAPI } from '../utils/api';
-import { Card } from '../components/ui/Card';
-import { Button } from '../components/ui/Button';
 
 const Settings = () => {
   const [activeTab, setActiveTab] = useState('general');
@@ -88,22 +86,22 @@ const Settings = () => {
   ];
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-semibold text-gray-900">Settings</h1>
-        </div>
-      </Card>
+    <div className="p-6 space-y-6">
+      {/* Header */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <h1 className="text-2xl font-semibold text-gray-900">Settings</h1>
+        <p className="text-gray-600 mt-1">Manage your business preferences and configurations</p>
+      </div>
 
       {/* Tabs */}
-      <Card>
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
         <div className="border-b border-gray-200">
-          <nav className="flex space-x-8 px-6">
+          <nav className="flex space-x-8 px-6 overflow-x-auto">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm ${
+                className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
                   activeTab === tab.id
                     ? 'border-blue-500 text-blue-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -115,11 +113,11 @@ const Settings = () => {
             ))}
           </nav>
         </div>
-      </Card>
+      </div>
 
       {/* General Settings */}
       {activeTab === 'general' && (
-        <Card className="p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-6">General Settings</h3>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -128,7 +126,7 @@ const Settings = () => {
               <select 
                 value={settings.system.currency}
                 onChange={(e) => handleSettingChange('system', 'currency', e.target.value)}
-                className="w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="NGN">Nigerian Naira (₦)</option>
                 <option value="USD">US Dollar ($)</option>
@@ -142,7 +140,7 @@ const Settings = () => {
               <select 
                 value={settings.system.timezone}
                 onChange={(e) => handleSettingChange('system', 'timezone', e.target.value)}
-                className="w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="Africa/Lagos">West Africa Time (WAT)</option>
                 <option value="Africa/Accra">Ghana Mean Time (GMT)</option>
@@ -155,7 +153,7 @@ const Settings = () => {
               <select 
                 value={settings.system.date_format}
                 onChange={(e) => handleSettingChange('system', 'date_format', e.target.value)}
-                className="w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="DD/MM/YYYY">DD/MM/YYYY</option>
                 <option value="MM/DD/YYYY">MM/DD/YYYY</option>
@@ -169,7 +167,7 @@ const Settings = () => {
                 type="number"
                 value={settings.system.low_stock_threshold}
                 onChange={(e) => handleSettingChange('system', 'low_stock_threshold', parseInt(e.target.value))}
-                className="w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 min="1"
               />
             </div>
@@ -181,23 +179,26 @@ const Settings = () => {
                 type="checkbox" 
                 checked={settings.system.auto_backup}
                 onChange={(e) => handleSettingChange('system', 'auto_backup', e.target.checked)}
-                className="h-4 w-4 text-blue-600" 
+                className="h-4 w-4 text-blue-600 rounded" 
               />
               <span className="text-sm text-gray-700">Enable automatic daily backups</span>
             </label>
           </div>
           
           <div className="mt-6 pt-6 border-t border-gray-200">
-            <Button onClick={() => updateSettings('system')}>
+            <button 
+              onClick={() => updateSettings('system')}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
               Save General Settings
-            </Button>
+            </button>
           </div>
-        </Card>
+        </div>
       )}
 
       {/* Notifications */}
       {activeTab === 'notifications' && (
-        <Card className="p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-6">Notification Preferences</h3>
           
           <div className="space-y-6">
@@ -218,7 +219,7 @@ const Settings = () => {
                       type="checkbox" 
                       checked={settings.notifications[item.key]}
                       onChange={(e) => handleSettingChange('notifications', item.key, e.target.checked)}
-                      className="h-4 w-4 text-blue-600" 
+                      className="h-4 w-4 text-blue-600 rounded" 
                     />
                     <span className="text-sm text-gray-700">{item.label}</span>
                   </label>
@@ -236,7 +237,7 @@ const Settings = () => {
                   type="checkbox" 
                   checked={settings.notifications.sms_alerts}
                   onChange={(e) => handleSettingChange('notifications', 'sms_alerts', e.target.checked)}
-                  className="h-4 w-4 text-blue-600" 
+                  className="h-4 w-4 text-blue-600 rounded" 
                 />
                 <span className="text-sm text-gray-700">Enable SMS alerts</span>
               </label>
@@ -244,16 +245,19 @@ const Settings = () => {
           </div>
           
           <div className="mt-6 pt-6 border-t border-gray-200">
-            <Button onClick={() => updateSettings('notifications')}>
+            <button 
+              onClick={() => updateSettings('notifications')}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
               Save Notification Settings
-            </Button>
+            </button>
           </div>
-        </Card>
+        </div>
       )}
 
       {/* Security */}
       {activeTab === 'security' && (
-        <Card className="p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-6">Security Settings</h3>
           
           <div className="space-y-6">
@@ -263,7 +267,7 @@ const Settings = () => {
                   type="checkbox" 
                   checked={settings.security.two_factor_auth}
                   onChange={(e) => handleSettingChange('security', 'two_factor_auth', e.target.checked)}
-                  className="h-4 w-4 text-blue-600" 
+                  className="h-4 w-4 text-blue-600 rounded" 
                 />
                 <span className="text-sm font-medium text-gray-700">Enable Two-Factor Authentication</span>
               </label>
@@ -277,7 +281,7 @@ const Settings = () => {
                   type="number"
                   value={settings.security.session_timeout}
                   onChange={(e) => handleSettingChange('security', 'session_timeout', parseInt(e.target.value))}
-                  className="w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   min="5"
                   max="480"
                 />
@@ -289,7 +293,7 @@ const Settings = () => {
                   type="number"
                   value={settings.security.password_expiry}
                   onChange={(e) => handleSettingChange('security', 'password_expiry', parseInt(e.target.value))}
-                  className="w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   min="30"
                   max="365"
                 />
@@ -305,20 +309,23 @@ const Settings = () => {
           </div>
           
           <div className="mt-6 pt-6 border-t border-gray-200">
-            <Button onClick={() => updateSettings('security')}>
+            <button 
+              onClick={() => updateSettings('security')}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
               Save Security Settings
-            </Button>
+            </button>
           </div>
-        </Card>
+        </div>
       )}
 
       {/* Billing */}
       {activeTab === 'billing' && (
         <div className="space-y-6">
-          <Card className="p-6">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-6">Subscription & Billing</h3>
             
-            <div className="bg-green-50 border border-green-200 p-4 rounded-md mb-6">
+            <div className="bg-green-50 border border-green-200 p-4 rounded-lg mb-6">
               <div className="flex items-center justify-between">
                 <div>
                   <h4 className="font-medium text-green-900">Premium Plan</h4>
@@ -334,7 +341,7 @@ const Settings = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <h4 className="font-medium text-gray-900 mb-3">Payment Method</h4>
-                <div className="border border-gray-200 p-4 rounded-md">
+                <div className="border border-gray-200 p-4 rounded-lg">
                   <p className="text-sm text-gray-600">**** **** **** 1234</p>
                   <p className="text-xs text-gray-500">Expires 12/25</p>
                 </div>
@@ -358,9 +365,9 @@ const Settings = () => {
                 </div>
               </div>
             </div>
-          </Card>
+          </div>
           
-          <Card className="p-6">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <h4 className="font-medium text-gray-900 mb-4">Receipt Settings</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
@@ -369,7 +376,7 @@ const Settings = () => {
                   type="text"
                   value={settings.receipt.footer_text}
                   onChange={(e) => handleSettingChange('receipt', 'footer_text', e.target.value)}
-                  className="w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Thank you message"
                 />
               </div>
@@ -379,7 +386,7 @@ const Settings = () => {
                 <select 
                   value={settings.receipt.paper_size}
                   onChange={(e) => handleSettingChange('receipt', 'paper_size', e.target.value)}
-                  className="w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="A4">A4</option>
                   <option value="80mm">80mm Thermal</option>
@@ -394,7 +401,7 @@ const Settings = () => {
                   type="checkbox" 
                   checked={settings.receipt.show_logo}
                   onChange={(e) => handleSettingChange('receipt', 'show_logo', e.target.checked)}
-                  className="h-4 w-4 text-blue-600" 
+                  className="h-4 w-4 text-blue-600 rounded" 
                 />
                 <span className="text-sm text-gray-700">Show logo on receipts</span>
               </label>
@@ -404,46 +411,55 @@ const Settings = () => {
                   type="checkbox" 
                   checked={settings.receipt.show_barcode}
                   onChange={(e) => handleSettingChange('receipt', 'show_barcode', e.target.checked)}
-                  className="h-4 w-4 text-blue-600" 
+                  className="h-4 w-4 text-blue-600 rounded" 
                 />
                 <span className="text-sm text-gray-700">Show barcode on receipts</span>
               </label>
             </div>
             
             <div className="mt-6 pt-6 border-t border-gray-200">
-              <Button onClick={() => updateSettings('receipt')}>
+              <button 
+                onClick={() => updateSettings('receipt')}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
                 Save Receipt Settings
-              </Button>
+              </button>
             </div>
-          </Card>
+          </div>
         </div>
       )}
 
       {/* Data Management */}
       {activeTab === 'data' && (
-        <Card className="p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-6">Data Management</h3>
           
           <div className="space-y-6">
             <div>
               <h4 className="font-medium text-gray-900 mb-3">Export Data</h4>
               <p className="text-sm text-gray-600 mb-4">Download all your business data in CSV format</p>
-              <Button onClick={exportData} className="flex items-center space-x-2">
-                <DocumentArrowDownIcon className="h-4 w-4" />
-                <span>Export All Data</span>
-              </Button>
+              <button 
+                onClick={exportData}
+                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                <DocumentArrowDownIcon className="h-4 w-4 mr-2" />
+                Export All Data
+              </button>
             </div>
             
             <div className="pt-6 border-t border-gray-200">
               <h4 className="font-medium text-red-900 mb-3">Danger Zone</h4>
               <p className="text-sm text-red-600 mb-4">Permanently delete all your business data. This action cannot be undone.</p>
-              <Button onClick={deleteAllData} variant="danger" className="flex items-center space-x-2">
-                <TrashIcon className="h-4 w-4" />
-                <span>Delete All Data</span>
-              </Button>
+              <button 
+                onClick={deleteAllData}
+                className="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              >
+                <TrashIcon className="h-4 w-4 mr-2" />
+                Delete All Data
+              </button>
             </div>
           </div>
-        </Card>
+        </div>
       )}
     </div>
   );

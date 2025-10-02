@@ -1,9 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { ShoppingBagIcon, UsersIcon, TruckIcon, MapPinIcon, ClockIcon, PlusIcon, ChatBubbleLeftRightIcon } from '@heroicons/react/24/outline';
+import { ShoppingBagIcon, UsersIcon, TruckIcon, MapPinIcon, ClockIcon, PlusIcon, ChatBubbleLeftRightIcon, StarIcon } from '@heroicons/react/24/outline';
 import api from '../utils/api';
-import { Card } from '../components/ui/Card';
-import { Button } from '../components/ui/Button';
-import { Badge } from '../components/ui/Badge';
 import CreateListingModal from '../components/CreateListingModal';
 import AddSupplierModal from '../components/AddSupplierModal';
 import ContactSupplierModal from '../components/ContactSupplierModal';
@@ -50,7 +47,6 @@ const Marketplace = () => {
       setMyListings(Array.isArray(myListingsRes.data) ? myListingsRes.data : myListingsRes.data?.results || []);
     } catch (error) {
       console.error('Error fetching marketplace data:', error);
-      console.error('Error details:', error.response);
       setListings([]);
       setGroupBuys([]);
       setSuppliers([]);
@@ -63,16 +59,13 @@ const Marketplace = () => {
   const handleCreateListing = async (listingData) => {
     try {
       setSubmitting(true);
-      console.log('Creating listing with data:', listingData);
       const response = await api.post('/marketplace/listings/', listingData);
-      console.log('Listing created successfully:', response.data);
       setShowCreateModal(false);
       setShowInventoryModal(false);
       await fetchData();
       alert('Listing created successfully!');
     } catch (error) {
       console.error('Error creating listing:', error);
-      console.error('Error details:', error.response?.data);
       
       let errorMessage = 'Failed to create listing.';
       if (error.response?.data) {
@@ -97,15 +90,12 @@ const Marketplace = () => {
   const handleAddSupplier = async (supplierData) => {
     try {
       setSubmitting(true);
-      console.log('Adding supplier:', supplierData);
       const response = await api.post('/marketplace/suppliers/', supplierData);
-      console.log('Supplier added successfully:', response.data);
       setShowSupplierModal(false);
-      await fetchData(); // Wait for data refresh
+      await fetchData();
       alert('Supplier added successfully!');
     } catch (error) {
       console.error('Error adding supplier:', error);
-      console.error('Error details:', error.response?.data);
       alert(`Failed to add supplier: ${error.response?.data?.detail || error.message}`);
     } finally {
       setSubmitting(false);
@@ -130,13 +120,11 @@ const Marketplace = () => {
   const handleSubmitOffer = async (listingId, offerData) => {
     try {
       setSubmitting(true);
-      console.log('Submitting offer:', offerData);
       const response = await api.post(`/marketplace/listings/${listingId}/make_offer/`, offerData);
       setShowOfferModal(false);
       alert('Offer submitted successfully!');
     } catch (error) {
       console.error('Error submitting offer:', error);
-      console.error('Error details:', error.response?.data);
       alert(`Failed to submit offer: ${error.response?.data?.detail || error.message}`);
     } finally {
       setSubmitting(false);
@@ -173,8 +161,8 @@ const Marketplace = () => {
       message += '\n\nA message thread has been created in the Messages tab for coordination.';
       
       alert(message);
-      handleViewOffers(selectedListing); // Refresh offers
-      await fetchData(); // Refresh all data to update listing quantities
+      handleViewOffers(selectedListing);
+      await fetchData();
     } catch (error) {
       console.error('Error accepting offer:', error);
       alert('Failed to accept offer');
@@ -185,7 +173,7 @@ const Marketplace = () => {
     try {
       await api.post(`/marketplace/offers/${offerId}/reject/`);
       alert('Offer rejected');
-      handleViewOffers(selectedListing); // Refresh offers
+      handleViewOffers(selectedListing);
     } catch (error) {
       console.error('Error rejecting offer:', error);
       alert('Failed to reject offer');
@@ -221,108 +209,129 @@ const Marketplace = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Community Marketplace</h1>
-          <p className="text-gray-600">Connect with local stores and suppliers</p>
-        </div>
-        <div className="flex space-x-3">
-          <Button onClick={() => setShowInventoryModal(true)} variant="outline" className="flex items-center space-x-2">
-            <PlusIcon className="h-4 w-4" />
-            <span>Sell from Inventory</span>
-          </Button>
-          <Button onClick={() => setShowCreateModal(true)} className="flex items-center space-x-2">
-            <PlusIcon className="h-4 w-4" />
-            <span>Create Listing</span>
-          </Button>
+    <div className="p-6 space-y-6">
+      {/* Header */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold text-gray-900">Community Marketplace</h1>
+            <p className="text-gray-600 mt-1">Connect with local stores and suppliers</p>
+          </div>
+          <div className="flex space-x-3">
+            <button 
+              onClick={() => setShowInventoryModal(true)}
+              className="inline-flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <PlusIcon className="h-4 w-4 mr-2" />
+              Sell from Inventory
+            </button>
+            <button 
+              onClick={() => setShowCreateModal(true)}
+              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <PlusIcon className="h-4 w-4 mr-2" />
+              Create Listing
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="p-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center">
-            <ShoppingBagIcon className="h-8 w-8 text-blue-600" />
-            <div className="ml-3">
+            <div className="p-3 bg-blue-100 rounded-lg">
+              <ShoppingBagIcon className="h-6 w-6 text-blue-600" />
+            </div>
+            <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Active Listings</p>
               <p className="text-2xl font-semibold text-gray-900">{listings.length}</p>
             </div>
           </div>
-        </Card>
-        <Card className="p-4">
+        </div>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center">
-            <UsersIcon className="h-8 w-8 text-green-600" />
-            <div className="ml-3">
+            <div className="p-3 bg-green-100 rounded-lg">
+              <UsersIcon className="h-6 w-6 text-green-600" />
+            </div>
+            <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Group Buys</p>
               <p className="text-2xl font-semibold text-gray-900">{groupBuys.length}</p>
             </div>
           </div>
-        </Card>
-        <Card className="p-4">
+        </div>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center">
-            <TruckIcon className="h-8 w-8 text-purple-600" />
-            <div className="ml-3">
+            <div className="p-3 bg-purple-100 rounded-lg">
+              <TruckIcon className="h-6 w-6 text-purple-600" />
+            </div>
+            <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Local Suppliers</p>
               <p className="text-2xl font-semibold text-gray-900">{suppliers.length}</p>
             </div>
           </div>
-        </Card>
-        <Card className="p-4">
+        </div>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center">
-            <MapPinIcon className="h-8 w-8 text-orange-600" />
-            <div className="ml-3">
+            <div className="p-3 bg-orange-100 rounded-lg">
+              <MapPinIcon className="h-6 w-6 text-orange-600" />
+            </div>
+            <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">My Listings</p>
               <p className="text-2xl font-semibold text-gray-900">{myListings.length}</p>
             </div>
           </div>
-        </Card>
+        </div>
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8">
-          {[
-            { id: 'browse', name: 'Browse Listings', count: listings.length },
-            { id: 'group-buys', name: 'Group Buys', count: groupBuys.length },
-            { id: 'suppliers', name: 'Local Suppliers', count: suppliers.length },
-            { id: 'messages', name: 'Messages', count: 0 },
-            { id: 'my-listings', name: 'My Listings', count: myListings.length }
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                activeTab === tab.id
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              {tab.name}
-              {tab.count > 0 && (
-                <Badge className="ml-2">{tab.count}</Badge>
-              )}
-            </button>
-          ))}
-        </nav>
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+        <div className="border-b border-gray-200">
+          <nav className="flex space-x-8 px-6">
+            {[
+              { id: 'browse', name: 'Browse Listings', count: listings.length },
+              { id: 'group-buys', name: 'Group Buys', count: groupBuys.length },
+              { id: 'suppliers', name: 'Local Suppliers', count: suppliers.length },
+              { id: 'messages', name: 'Messages', count: 0 },
+              { id: 'my-listings', name: 'My Listings', count: myListings.length }
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === tab.id
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                {tab.name}
+                {tab.count > 0 && (
+                  <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                    {tab.count}
+                  </span>
+                )}
+              </button>
+            ))}
+          </nav>
+        </div>
       </div>
 
       {/* Browse Listings Tab */}
       {activeTab === 'browse' && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {listings.length === 0 ? (
-            <div className="col-span-full text-center py-12">
+            <div className="col-span-full bg-white rounded-lg shadow-sm border border-gray-200 text-center py-12">
               <ShoppingBagIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">No Listings Available</h3>
               <p className="text-gray-600">Be the first to create a listing!</p>
             </div>
           ) : (
             listings.map((listing) => (
-              <Card key={listing.id} className="p-6">
+              <div key={listing.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                 <div className="flex items-start justify-between mb-4">
-                  <Badge className={getListingTypeColor(listing.listing_type)}>
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getListingTypeColor(listing.listing_type)}`}>
                     {getListingTypeLabel(listing.listing_type)}
-                  </Badge>
+                  </span>
                   <div className="flex items-center text-sm text-gray-500">
                     <ClockIcon className="h-4 w-4 mr-1" />
                     {listing.time_left}
@@ -357,28 +366,27 @@ const Marketplace = () => {
                     {listing.location}
                   </div>
                   {listing.delivery_available && (
-                    <Badge className="bg-blue-100 text-blue-800">Delivery Available</Badge>
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      Delivery Available
+                    </span>
                   )}
                 </div>
                 
                 <div className="flex space-x-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="flex-1"
+                  <button 
                     onClick={() => handleContactSeller(listing)}
+                    className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                   >
                     Contact Seller
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    className="flex-1"
+                  </button>
+                  <button 
                     onClick={() => handleMakeOffer(listing)}
+                    className="flex-1 px-3 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                   >
                     Make Offer
-                  </Button>
+                  </button>
                 </div>
-              </Card>
+              </div>
             ))
           )}
         </div>
@@ -388,16 +396,18 @@ const Marketplace = () => {
       {activeTab === 'group-buys' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {groupBuys.length === 0 ? (
-            <div className="col-span-full text-center py-12">
+            <div className="col-span-full bg-white rounded-lg shadow-sm border border-gray-200 text-center py-12">
               <UsersIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">No Group Buys Active</h3>
               <p className="text-gray-600">Start a group buy to get better prices!</p>
             </div>
           ) : (
             groupBuys.map((groupBuy) => (
-              <Card key={groupBuy.id} className="p-6">
+              <div key={groupBuy.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                 <div className="flex items-start justify-between mb-4">
-                  <Badge className="bg-purple-100 text-purple-800">{groupBuy.status}</Badge>
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                    {groupBuy.status}
+                  </span>
                   <span className="text-sm text-gray-500">
                     {new Date(groupBuy.deadline).toLocaleDateString()}
                   </span>
@@ -438,8 +448,10 @@ const Marketplace = () => {
                   </div>
                 </div>
                 
-                <Button className="w-full">Join Group Buy</Button>
-              </Card>
+                <button className="w-full bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 transition-colors">
+                  Join Group Buy
+                </button>
+              </div>
             ))
           )}
         </div>
@@ -453,30 +465,40 @@ const Marketplace = () => {
               <h2 className="text-lg font-semibold text-gray-900">Local Suppliers</h2>
               <p className="text-sm text-gray-600">Connect with farmers, producers, and wholesalers</p>
             </div>
-            <Button onClick={() => setShowSupplierModal(true)} className="flex items-center space-x-2">
-              <PlusIcon className="h-4 w-4" />
-              <span>Add Supplier</span>
-            </Button>
+            <button 
+              onClick={() => setShowSupplierModal(true)}
+              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <PlusIcon className="h-4 w-4 mr-2" />
+              Add Supplier
+            </button>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {suppliers.length === 0 ? (
-            <div className="col-span-full text-center py-12">
+            <div className="col-span-full bg-white rounded-lg shadow-sm border border-gray-200 text-center py-12">
               <TruckIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">No Suppliers Listed</h3>
               <p className="text-gray-600 mb-4">Add local suppliers to build your network!</p>
-              <Button onClick={() => setShowSupplierModal(true)}>Add First Supplier</Button>
+              <button 
+                onClick={() => setShowSupplierModal(true)}
+                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Add First Supplier
+              </button>
             </div>
           ) : (
             suppliers.map((supplier) => (
-              <Card key={supplier.id} className="p-6">
+              <div key={supplier.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                 <div className="flex items-start justify-between mb-4">
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900">{supplier.name}</h3>
                     <p className="text-sm text-gray-600">{supplier.supplier_type}</p>
                   </div>
                   {supplier.is_verified && (
-                    <Badge className="bg-green-100 text-green-800">Verified</Badge>
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      Verified
+                    </span>
                   )}
                 </div>
                 
@@ -500,14 +522,14 @@ const Marketplace = () => {
                   <p className="text-sm font-medium text-gray-900 mb-2">Products Offered:</p>
                   <div className="flex flex-wrap gap-1">
                     {supplier.products_list?.slice(0, 3).map((product, index) => (
-                      <Badge key={index} className="bg-gray-100 text-gray-800 text-xs">
+                      <span key={index} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                         {product}
-                      </Badge>
+                      </span>
                     ))}
                     {supplier.products_list?.length > 3 && (
-                      <Badge className="bg-gray-100 text-gray-800 text-xs">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                         +{supplier.products_list.length - 3} more
-                      </Badge>
+                      </span>
                     )}
                   </div>
                 </div>
@@ -515,16 +537,25 @@ const Marketplace = () => {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center">
                     <div className="flex text-yellow-400">
-                      {'★'.repeat(Math.floor(supplier.rating))}
-                      {'☆'.repeat(5 - Math.floor(supplier.rating))}
+                      {Array.from({ length: 5 }, (_, i) => (
+                        <StarIcon 
+                          key={i} 
+                          className={`h-4 w-4 ${i < Math.floor(supplier.rating) ? 'fill-current' : ''}`} 
+                        />
+                      ))}
                     </div>
                     <span className="text-sm text-gray-600 ml-1">
                       ({supplier.total_reviews})
                     </span>
                   </div>
-                  <Button size="sm" onClick={() => handleContactSupplier(supplier)}>Contact</Button>
+                  <button 
+                    onClick={() => handleContactSupplier(supplier)}
+                    className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Contact
+                  </button>
                 </div>
-              </Card>
+              </div>
             ))
           )}
           </div>
@@ -533,13 +564,11 @@ const Marketplace = () => {
 
       {/* Messages Tab */}
       {activeTab === 'messages' && (
-        <div className="space-y-4">
-          <Card className="text-center py-12">
-            <ChatBubbleLeftRightIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Messages</h3>
-            <p className="text-gray-600 mb-4">Direct communication with buyers and sellers</p>
-            <p className="text-sm text-gray-500">Messages are created automatically when offers are accepted</p>
-          </Card>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 text-center py-12">
+          <ChatBubbleLeftRightIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Messages</h3>
+          <p className="text-gray-600 mb-4">Direct communication with buyers and sellers</p>
+          <p className="text-sm text-gray-500">Messages are created automatically when offers are accepted</p>
         </div>
       )}
 
@@ -547,25 +576,32 @@ const Marketplace = () => {
       {activeTab === 'my-listings' && (
         <div className="space-y-4">
           {myListings.length === 0 ? (
-            <Card className="text-center py-12">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 text-center py-12">
               <ShoppingBagIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">No Listings Yet</h3>
               <p className="text-gray-600 mb-4">Create your first listing to start trading!</p>
-              <Button onClick={() => setShowCreateModal(true)}>Create Listing</Button>
-            </Card>
+              <button 
+                onClick={() => setShowCreateModal(true)}
+                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Create Listing
+              </button>
+            </div>
           ) : (
             myListings.map((listing) => (
-              <Card key={listing.id} className="p-6">
+              <div key={listing.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
                     <div className="flex items-center space-x-3 mb-2">
                       <h3 className="text-lg font-semibold text-gray-900">{listing.title}</h3>
-                      <Badge className={getListingTypeColor(listing.listing_type)}>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getListingTypeColor(listing.listing_type)}`}>
                         {getListingTypeLabel(listing.listing_type)}
-                      </Badge>
-                      <Badge className={listing.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
+                      </span>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        listing.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                      }`}>
                         {listing.status}
-                      </Badge>
+                      </span>
                     </div>
                     <p className="text-gray-600 mb-2">{listing.description}</p>
                     <div className="flex items-center space-x-4 text-sm text-gray-600">
@@ -578,23 +614,24 @@ const Marketplace = () => {
                     </div>
                   </div>
                   <div className="flex space-x-2">
-                    <Button variant="outline" size="sm">Edit</Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
+                    <button className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                      Edit
+                    </button>
+                    <button 
                       onClick={() => handleViewOffers(listing)}
+                      className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                     >
                       View Offers
-                    </Button>
+                    </button>
                   </div>
                 </div>
-              </Card>
+              </div>
             ))
           )}
         </div>
       )}
 
-      {/* Create Listing Modal */}
+      {/* Modals */}
       <CreateListingModal
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}

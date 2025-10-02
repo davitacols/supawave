@@ -1,228 +1,228 @@
-// import ErrorHandler from './errorHandler'; // Unused for now
+import axios from 'axios';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
-console.log('🔗 API Base URL:', API_BASE_URL);
 
-// Debug token on app load
-if (typeof window !== 'undefined') {
-  const token = localStorage.getItem('access_token');
-  if (token) {
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      console.log('🔑 Token payload:', payload);
-      console.log('🔑 Token expires at:', new Date(payload.exp * 1000));
-      console.log('🔑 Current time:', new Date());
-      console.log('🔑 Token valid for:', Math.round((payload.exp * 1000 - Date.now()) / 1000 / 60), 'minutes');
-    } catch (e) {
-      console.log('🔑 Invalid token format');
+// Create axios instance
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Request interceptor to add auth token
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('access_token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
   }
-}
+);
 
-// Clear expired tokens on app load
-if (typeof window !== 'undefined') {
-  const token = localStorage.getItem('access_token');
-  if (token) {
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      const isExpired = payload.exp * 1000 < Date.now();
-      if (isExpired) {
-        console.log('🔄 Clearing expired token');
+// Response interceptor to handle token refresh
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      try {
+        const refreshToken = localStorage.getItem('refresh_token');
+        if (refreshToken) {
+          const response = await axios.post(`${API_BASE_URL}/auth/refresh/`, {
+            refresh: refreshToken,
+          });
+
+          const { access } = response.data;
+          localStorage.setItem('access_token', access);
+
+          // Retry the original request
+          originalRequest.headers.Authorization = `Bearer ${access}`;
+          return api(originalRequest);
+        }
+      } catch (refreshError) {
+        // Refresh failed, redirect to login
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
         localStorage.removeItem('user');
+        window.location.href = '/login';
+        return Promise.reject(refreshError);
       }
-    } catch (e) {
-      console.log('🔄 Clearing invalid token');
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
-      localStorage.removeItem('user');
     }
+
+    return Promise.reject(error);
   }
-}
+);
 
-const apiRequest = async (endpoint, options = {}) => {
-  const token = localStorage.getItem('access_token');
-  const config = {
-    headers: {
-      ...(token && { Authorization: `Bearer ${token}` }),
-      ...options.headers,
-    },
-    ...options,
-  };
-
-  // Only set Content-Type for non-FormData requests
-  if (!(config.body instanceof FormData)) {
-    config.headers['Content-Type'] = 'application/json';
-    if (config.body && typeof config.body === 'object') {
-      config.body = JSON.stringify(config.body);
-    }
-  }
-
-  try {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
-    
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      const error = new Error(errorData.message || `HTTP ${response.status}`);
-      error.response = { status: response.status, data: errorData };
-      throw error;
-    }
-
-    // Handle 204 No Content responses
-    if (response.status === 204) {
-      return { data: null };
-    }
-
-    return { data: await response.json() };
-  } catch (error) {
-    if (!error.response) {
-      // Network or other errors
-      const networkError = new Error('Network connection failed');
-      networkError.response = { status: 0 };
-      throw networkError;
-    }
-    throw error;
-  }
-};
-
-const api = {
-  get: (endpoint) => apiRequest(endpoint),
-  post: (endpoint, data) => apiRequest(endpoint, { method: 'POST', body: data }),
-  put: (endpoint, data) => apiRequest(endpoint, { method: 'PUT', body: data }),
-  patch: (endpoint, data) => apiRequest(endpoint, { method: 'PATCH', body: data }),
-  delete: (endpoint) => apiRequest(endpoint, { method: 'DELETE' }),
-};
-
+// Auth API
 export const authAPI = {
-  register: (data) => api.post('/auth/register', data),
-  login: (data) => api.post('/auth/login', data),
-  logout: () => api.post('/auth/logout'),
-  getBusiness: () => api.get('/auth/business'),
-  updateBusiness: (data) => api.put('/auth/business', data),
-  getStaff: () => api.get('/auth/staff'),
-  createStaff: (data) => api.post('/auth/staff', data),
-  updateStaff: (id, data) => api.put(`/auth/staff/${id}`, data),
-  deleteStaff: (id) => api.delete(`/auth/staff/${id}`),
+  login: (credentials) => api.post('/auth/login/', credentials),
+  register: (userData) => api.post('/auth/register/', userData),
+  logout: () => api.post('/auth/logout/'),
+  refresh: (refreshToken) => api.post('/auth/refresh/', { refresh: refreshToken }),
+  getBusiness: () => api.get('/auth/business/'),
+  updateBusiness: (data) => api.put('/auth/business/', data),
+  getCurrentUser: () => api.get('/auth/me'),
+  getStaff: () => api.get('/auth/staff/'),
+  createStaff: (data) => api.post('/auth/staff/', data),
+  updateStaff: (id, data) => api.put(`/auth/staff/${id}/`, data),
+  deleteStaff: (id) => api.delete(`/auth/staff/${id}/`),
 };
 
+// Inventory API
 export const inventoryAPI = {
   getProducts: (params = '') => api.get(`/inventory/products/?${params}`),
   createProduct: (data) => api.post('/inventory/products/', data),
   updateProduct: (id, data) => api.put(`/inventory/products/${id}/`, data),
   deleteProduct: (id) => api.delete(`/inventory/products/${id}/`),
-  getLowStockProducts: () => api.get('/inventory/products/low-stock/'),
   getCategories: () => api.get('/inventory/categories/'),
-  createCategory: (data) => api.post('/inventory/categories/', data),
   getSuppliers: () => api.get('/inventory/suppliers/'),
-  createSupplier: (data) => api.post('/inventory/suppliers/', data),
-  searchByBarcode: (barcode) => api.get(`/inventory/barcode-search/?barcode=${barcode}`),
-  generateBarcode: (productId) => api.post(`/inventory/products/${productId}/generate-barcode/`),
+  getLowStock: () => api.get('/inventory/products/low-stock/'),
+  getLowStockProducts: () => api.get('/inventory/products/low-stock/'),
+  getAlerts: () => api.get('/inventory/alerts/'),
+  getSmartReorder: () => api.get('/inventory/smart-reorder/'),
+  getStockTakes: () => api.get('/inventory/stock-takes/'),
+  getStockTake: (id) => api.get(`/inventory/stock-takes/${id}/`),
+  updateStockTake: (id, data) => api.put(`/inventory/stock-takes/${id}/`, data),
+  updateStockTakeCount: (id, data) => api.post(`/inventory/stock-takes/${id}/count/`, data),
+  barcodeSearch: (barcode) => api.get(`/inventory/products/barcode/${barcode}/`),
 };
 
+// Sales API
 export const salesAPI = {
   getSales: () => api.get('/sales/'),
   createSale: (data) => api.post('/sales/', data),
   getAnalytics: () => api.get('/sales/analytics/'),
-  getReceipt: (saleId) => api.get(`/sales/receipt/${saleId}/`),
 };
 
-export const analyticsAPI = {
-  getAdvancedAnalytics: () => api.get('/analytics/advanced/'),
-  getReorderSuggestions: () => api.get('/inventory/smart-reorder/'),
-  markAlertRead: (alertId) => api.post(`/analytics/alerts/${alertId}/read/`),
-  getLiveMetrics: () => api.get('/analytics/live-metrics/'),
-  getQuickStats: () => api.get('/analytics/quick-stats/'),
+// Customers API
+export const customersAPI = {
+  getCustomers: () => api.get('/customers/'),
+  createCustomer: (data) => api.post('/customers/', data),
+  updateCustomer: (id, data) => api.put(`/customers/${id}/`, data),
+  deleteCustomer: (id) => api.delete(`/customers/${id}/`),
 };
 
-export const invoiceAPI = {
-  getInvoices: () => api.get('/invoices/'),
-  createInvoice: (data) => api.post('/invoices/', data),
-  getInvoice: (id) => api.get(`/invoices/${id}/`),
-  updateInvoice: (id, data) => api.put(`/invoices/${id}/`, data),
-  getCustomers: () => api.get('/invoices/customers/'),
-  createCustomer: (data) => api.post('/invoices/customers/', data),
-  updateCustomer: (id, data) => api.put(`/invoices/customers/${id}/`, data),
-  deleteCustomer: (id) => api.delete(`/invoices/customers/${id}/`),
+// Credit API
+export const creditAPI = {
+  getCreditSales: () => api.get('/credit/'),
+  createCreditSale: (data) => api.post('/credit/', data),
+  updateCreditSale: (id, data) => api.put(`/credit/${id}/`, data),
+  recordPayment: (id, data) => api.post(`/credit/${id}/payment/`, data),
 };
 
-export const barcodeAPI = {
-  searchByBarcode: (barcode) => api.get(`/inventory/barcode-search/?barcode=${barcode}`),
-  generateBarcode: (productId) => api.post(`/inventory/products/${productId}/generate-barcode/`),
+// Reports API
+export const reportsAPI = {
+  getSalesReport: (params) => api.get(`/reports/sales/?${params}`),
+  getInventoryReport: () => api.get('/reports/inventory/'),
+  getCustomerReport: () => api.get('/reports/customers/'),
+  getProfitReport: (params) => api.get(`/reports/profit/?${params}`),
 };
 
-export const notificationsAPI = {
-  getNotifications: () => api.get('/notifications/'),
-  markAsRead: (id) => api.patch(`/notifications/${id}/`, { is_read: true }),
-  markAllAsRead: () => api.post('/notifications/mark-all-read/'),
-};
-
-export const whatsappAPI = {
-  getConfig: () => api.get('/whatsapp/config/'),
-  updateConfig: (data) => api.put('/whatsapp/config/', data),
-  getTemplates: () => api.get('/whatsapp/templates/'),
-  createTemplate: (data) => api.post('/whatsapp/templates/', data),
-  getMessages: () => api.get('/whatsapp/messages/'),
-  sendPromotion: (data) => api.post('/whatsapp/send-promotion/', data),
-};
-
-export const syncAPI = {
-  getSyncData: (lastSync) => api.get(`/sync/data/?last_sync=${lastSync}`),
-  uploadOfflineData: (data) => api.post('/sync/upload/', data),
-  checkConnection: () => api.get('/sync/status/'),
-};
-
-export const paymentAPI = {
-  getPlans: () => api.get('/payments/plans/'),
-  getSubscriptionStatus: () => api.get('/payments/status/'),
-  initiatePayment: (data) => api.post('/payments/initiate/', data),
-  verifyPayment: (reference) => api.post('/payments/verify/', { reference }),
-  cancelSubscription: () => api.post('/payments/cancel/'),
-};
-
+// Stores API
 export const storesAPI = {
   getStores: () => api.get('/stores/'),
   createStore: (data) => api.post('/stores/', data),
   updateStore: (id, data) => api.put(`/stores/${id}/`, data),
   deleteStore: (id) => api.delete(`/stores/${id}/`),
-  setMainStore: (id) => api.post(`/stores/${id}/set_main/`),
-  getStoreInventory: (id) => api.get(`/stores/${id}/inventory/`),
-  addProductToStore: (storeId, data) => api.post(`/stores/${storeId}/add-product/`, data),
+  setMainStore: (id) => api.post(`/stores/${id}/set-main/`),
+  getStoreInventory: (id, params = '') => api.get(`/stores/${id}/inventory/?${params}`),
   getTransfers: () => api.get('/transfers/'),
   createTransfer: (data) => api.post('/transfers/', data),
   approveTransfer: (id) => api.post(`/transfers/${id}/approve/`),
   completeTransfer: (id) => api.post(`/transfers/${id}/complete/`),
   cancelTransfer: (id) => api.post(`/transfers/${id}/cancel/`),
+  getTransferDetails: (id) => api.get(`/transfers/${id}/`),
+  getStoreInventory: (storeId) => api.get(`/transfers/store-inventory/${storeId}/`),
+  assignManager: (storeId, managerId) => api.post(`/stores/${storeId}/assign-manager/`, { manager_id: managerId }),
+  getAvailableManagers: () => api.get('/stores/available-managers/'),
+  assignStaff: (storeId, staffId) => api.post(`/stores/${storeId}/assign-staff/`, { staff_id: staffId }),
+  getStoreStaff: (storeId) => api.get(`/stores/${storeId}/staff/`),
+  switchStore: (storeId) => api.post(`/stores/switch-store/${storeId}/`)
 };
 
+// Invoices API
+export const invoiceAPI = {
+  getInvoices: () => api.get('/invoices/'),
+  createInvoice: (data) => api.post('/invoices/', data),
+  updateInvoice: (id, data) => api.put(`/invoices/${id}/`, data),
+  deleteInvoice: (id) => api.delete(`/invoices/${id}/`),
+  getCustomers: () => api.get('/invoices/customers/'),
+  createCustomer: (data) => api.post('/invoices/customers/', data),
+};
+
+// Notifications API
+export const notificationsAPI = {
+  getNotifications: (params = '') => api.get(`/notifications/?${params}`),
+  createNotification: (data) => api.post('/notifications/', data),
+  markAsRead: (id) => api.patch(`/notifications/${id}/read`),
+  markAllAsRead: () => api.post('/notifications/mark-all-read'),
+  deleteNotification: (id) => api.delete(`/notifications/${id}`),
+};
+
+// Analytics API
+export const analyticsAPI = {
+  getDashboard: () => api.get('/analytics/dashboard/'),
+  getSalesAnalytics: (params) => api.get(`/analytics/sales/?${params}`),
+  getInventoryAnalytics: () => api.get('/analytics/inventory/'),
+  getCustomerAnalytics: () => api.get('/analytics/customers/'),
+};
+
+// Marketplace API
 export const marketplaceAPI = {
   getListings: () => api.get('/marketplace/listings/'),
   createListing: (data) => api.post('/marketplace/listings/', data),
-  getMyListings: () => api.get('/marketplace/listings/my_listings/'),
-  makeOffer: (listingId, data) => api.post(`/marketplace/listings/${listingId}/make_offer/`, data),
-  getOffers: () => api.get('/marketplace/offers/'),
-  acceptOffer: (offerId) => api.post(`/marketplace/offers/${offerId}/accept/`),
-  rejectOffer: (offerId) => api.post(`/marketplace/offers/${offerId}/reject/`),
-  getGroupBuys: () => api.get('/marketplace/group-buys/'),
-  createGroupBuy: (data) => api.post('/marketplace/group-buys/', data),
-  joinGroupBuy: (groupBuyId, data) => api.post(`/marketplace/group-buys/${groupBuyId}/join/`, data),
   getSuppliers: () => api.get('/marketplace/suppliers/'),
   createSupplier: (data) => api.post('/marketplace/suppliers/', data),
-  addSupplierReview: (supplierId, data) => api.post(`/marketplace/suppliers/${supplierId}/add_review/`, data),
+  getGroupBuys: () => api.get('/marketplace/group-buys/'),
+  getOffers: () => api.get('/marketplace/offers/'),
+  makeOffer: (listingId, data) => api.post(`/marketplace/listings/${listingId}/make_offer/`, data),
+  acceptOffer: (offerId) => api.post(`/marketplace/offers/${offerId}/accept/`),
+  rejectOffer: (offerId) => api.post(`/marketplace/offers/${offerId}/reject/`),
 };
 
-export const reportsAPI = {
-  getDailyReport: (date) => api.get(`/reports/daily/?date=${date}`),
-  getMonthlyReport: (month, year) => api.get(`/reports/monthly/?month=${month}&year=${year}`),
-  getYearlyReport: (year) => api.get(`/reports/yearly/?year=${year}`),
-  exportDailyCSV: (date) => `/reports/export/daily/?date=${date}`,
-  exportMonthlyCSV: (month, year) => `/reports/export/monthly/?month=${month}&year=${year}`,
-  exportYearlyCSV: (year) => `/reports/export/yearly/?year=${year}`,
-};
-
+// Dashboard API
 export const dashboardAPI = {
-  getStats: () => api.get('/dashboard/stats'),
+  getDashboard: () => api.get('/dashboard/'),
+  getStats: () => api.get('/dashboard/stats/'),
 };
 
+// WhatsApp API
+export const whatsappAPI = {
+  getIntegration: () => api.get('/whatsapp/integration/'),
+  updateIntegration: (data) => api.put('/whatsapp/integration/', data),
+  sendMessage: (data) => api.post('/whatsapp/send/', data),
+  getMessages: () => api.get('/whatsapp/messages/'),
+};
+
+// Finance API
+export const financeAPI = {
+  getDashboard: () => api.get('/finance/dashboard'),
+  getExpenses: (params = '') => api.get(`/finance/expenses?${params}`),
+  createExpense: (data) => api.post('/finance/expenses', data),
+  getCategories: () => api.get('/finance/categories'),
+  getProfitLoss: (params = '') => api.get(`/finance/profit-loss?${params}`),
+  getSalesReport: (params = '') => api.get(`/finance/sales-report?${params}`),
+  getInventoryReport: () => api.get('/finance/inventory-report'),
+  getTaxReport: (params = '') => api.get(`/finance/tax-report?${params}`),
+};
+
+// Export api as named export for backward compatibility
 export { api };
+
+// Staff API
+export const staffAPI = {
+  getAll: () => api.get('/staff'),
+  create: (data) => api.post('/staff', data),
+  update: (id, data) => api.put(`/staff/${id}`, data),
+  delete: (id) => api.delete(`/staff/${id}`)
+};
+
 export default api;

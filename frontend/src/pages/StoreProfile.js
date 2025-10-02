@@ -4,9 +4,6 @@ import {
   PhotoIcon, SwatchIcon, CogIcon
 } from '@heroicons/react/24/outline';
 import { authAPI } from '../utils/api';
-import { Card } from '../components/ui/Card';
-import { Button } from '../components/ui/Button';
-import { LoadingSpinner } from '../components/ui/LoadingSpinner';
 
 const StoreProfile = () => {
   const [business, setBusiness] = useState(null);
@@ -116,27 +113,31 @@ const StoreProfile = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <LoadingSpinner size="large" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <Card>
+    <div className="p-6 space-y-6">
+      {/* Header */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-semibold text-gray-900">Store Profile</h1>
           {!editing && (
-            <Button onClick={() => setEditing(true)} className="flex items-center space-x-2">
-              <PencilIcon className="h-4 w-4" />
-              <span>Edit Profile</span>
-            </Button>
+            <button 
+              onClick={() => setEditing(true)}
+              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <PencilIcon className="h-4 w-4 mr-2" />
+              Edit Profile
+            </button>
           )}
         </div>
-      </Card>
+      </div>
       
       {/* Tabs */}
-      <Card>
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
         <div className="border-b border-gray-200">
           <nav className="flex space-x-8 px-6">
             {[
@@ -159,10 +160,10 @@ const StoreProfile = () => {
             ))}
           </nav>
         </div>
-      </Card>
+      </div>
 
       {activeTab === 'profile' && (
-        <Card className="overflow-hidden">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
           <div className="px-6 py-4 bg-gradient-to-r from-blue-600 to-blue-700">
             <div className="flex items-center space-x-4">
               <div className="w-16 h-16 bg-white rounded-lg flex items-center justify-center overflow-hidden">
@@ -188,7 +189,7 @@ const StoreProfile = () => {
                     type="text"
                     value={formData.name || ''}
                     onChange={(e) => setFormData({...formData, name: e.target.value})}
-                    className="w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 ) : (
                   <p className="text-gray-900">{business?.name}</p>
@@ -201,7 +202,7 @@ const StoreProfile = () => {
                   <select
                     value={formData.business_type || ''}
                     onChange={(e) => setFormData({...formData, business_type: e.target.value})}
-                    className="w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
                     <option value="retail">Retail Store</option>
                     <option value="supermarket">Supermarket</option>
@@ -223,7 +224,7 @@ const StoreProfile = () => {
                     type="tel"
                     value={formData.phone || ''}
                     onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                    className="w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 ) : (
                   <p className="text-gray-900">{business?.phone || 'Not provided'}</p>
@@ -237,7 +238,7 @@ const StoreProfile = () => {
                     type="email"
                     value={formData.email || ''}
                     onChange={(e) => setFormData({...formData, email: e.target.value})}
-                    className="w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 ) : (
                   <p className="text-gray-900">{business?.email || 'Not provided'}</p>
@@ -251,7 +252,7 @@ const StoreProfile = () => {
                     value={formData.address || ''}
                     onChange={(e) => setFormData({...formData, address: e.target.value})}
                     rows={3}
-                    className="w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="Enter your business address"
                   />
                 ) : (
@@ -262,34 +263,33 @@ const StoreProfile = () => {
 
             {editing && (
               <div className="mt-6 flex space-x-3">
-                <Button
+                <button
                   onClick={handleSave}
                   disabled={saveLoading}
-                  className="flex items-center space-x-2"
+                  className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
                 >
                   {saveLoading ? (
-                    <LoadingSpinner size="sm" />
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                   ) : (
-                    <CheckIcon className="h-4 w-4" />
+                    <CheckIcon className="h-4 w-4 mr-2" />
                   )}
-                  <span>{saveLoading ? 'Saving...' : 'Save Changes'}</span>
-                </Button>
-                <Button
-                  variant="secondary"
+                  {saveLoading ? 'Saving...' : 'Save Changes'}
+                </button>
+                <button
                   onClick={handleCancel}
-                  className="flex items-center space-x-2"
+                  className="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
                 >
-                  <XMarkIcon className="h-4 w-4" />
-                  <span>Cancel</span>
-                </Button>
+                  <XMarkIcon className="h-4 w-4 mr-2" />
+                  Cancel
+                </button>
               </div>
             )}
           </div>
-        </Card>
+        </div>
       )}
       
       {activeTab === 'branding' && (
-        <Card className="p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-6">Store Branding</h3>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -318,7 +318,7 @@ const StoreProfile = () => {
                   />
                   <label
                     htmlFor="logo-upload"
-                    className="cursor-pointer inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                    className="cursor-pointer inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
                   >
                     Upload Logo
                   </label>
@@ -344,7 +344,7 @@ const StoreProfile = () => {
                       type="text"
                       value={formData.primary_color || '#3B82F6'}
                       onChange={(e) => setFormData({...formData, primary_color: e.target.value})}
-                      className="flex-1 border border-gray-300 px-3 py-1 text-sm rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="flex-1 border border-gray-300 px-3 py-1 text-sm rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
                 </div>
@@ -361,7 +361,7 @@ const StoreProfile = () => {
                       type="text"
                       value={formData.secondary_color || '#6B7280'}
                       onChange={(e) => setFormData({...formData, secondary_color: e.target.value})}
-                      className="flex-1 border border-gray-300 px-3 py-1 text-sm rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="flex-1 border border-gray-300 px-3 py-1 text-sm rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
                 </div>
@@ -370,27 +370,27 @@ const StoreProfile = () => {
           </div>
           
           <div className="mt-6 pt-6 border-t border-gray-200">
-            <Button
+            <button
               onClick={handleBrandingSave}
               disabled={brandingLoading}
-              className="flex items-center space-x-2"
+              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
             >
-              {brandingLoading && <LoadingSpinner size="sm" />}
-              <span>{brandingLoading ? 'Saving...' : 'Save Branding'}</span>
-            </Button>
+              {brandingLoading && <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>}
+              {brandingLoading ? 'Saving...' : 'Save Branding'}
+            </button>
           </div>
-        </Card>
+        </div>
       )}
       
       {activeTab === 'preferences' && (
-        <Card className="p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-6">Store Preferences</h3>
           
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Currency</label>
-                <select className="w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                <select className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                   <option value="NGN">Nigerian Naira (₦)</option>
                   <option value="USD">US Dollar ($)</option>
                   <option value="GHS">Ghana Cedi (₵)</option>
@@ -400,7 +400,7 @@ const StoreProfile = () => {
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Timezone</label>
-                <select className="w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                <select className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                   <option value="Africa/Lagos">West Africa Time (WAT)</option>
                   <option value="Africa/Accra">Ghana Mean Time (GMT)</option>
                   <option value="Africa/Nairobi">East Africa Time (EAT)</option>
@@ -412,7 +412,7 @@ const StoreProfile = () => {
                 <input
                   type="number"
                   placeholder="5"
-                  className="w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
               
@@ -421,7 +421,7 @@ const StoreProfile = () => {
                 <input
                   type="text"
                   placeholder="Thank you for shopping with us!"
-                  className="w-full border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
             </div>
@@ -436,7 +436,7 @@ const StoreProfile = () => {
                   { id: 'payment_reminders', label: 'Payment reminders' }
                 ].map((item) => (
                   <label key={item.id} className="flex items-center space-x-3">
-                    <input type="checkbox" className="h-4 w-4 text-blue-600" defaultChecked />
+                    <input type="checkbox" className="h-4 w-4 text-blue-600 rounded" defaultChecked />
                     <span className="text-sm text-gray-700">{item.label}</span>
                   </label>
                 ))}
@@ -445,20 +445,20 @@ const StoreProfile = () => {
           </div>
           
           <div className="mt-6 pt-6 border-t border-gray-200">
-            <Button 
+            <button 
               onClick={handlePreferencesSave}
               disabled={preferencesLoading}
-              className="flex items-center space-x-2"
+              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
             >
-              {preferencesLoading && <LoadingSpinner size="sm" />}
-              <span>{preferencesLoading ? 'Saving...' : 'Save Preferences'}</span>
-            </Button>
+              {preferencesLoading && <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>}
+              {preferencesLoading ? 'Saving...' : 'Save Preferences'}
+            </button>
           </div>
-        </Card>
+        </div>
       )}
 
       {/* Subscription Details */}
-      <Card className="p-6">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Subscription Details</h3>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
@@ -467,7 +467,9 @@ const StoreProfile = () => {
           </div>
           <div>
             <p className="text-sm text-gray-600">Status</p>
-            <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded">Active</span>
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+              Active
+            </span>
           </div>
           <div>
             <p className="text-sm text-gray-600">Next Billing</p>
@@ -478,7 +480,7 @@ const StoreProfile = () => {
             <p className="font-medium text-gray-900">₦15,000</p>
           </div>
         </div>
-      </Card>
+      </div>
     </div>
   );
 };

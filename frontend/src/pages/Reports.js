@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { DocumentArrowDownIcon, CalendarIcon, ChartBarIcon } from '@heroicons/react/24/outline';
 import api from '../utils/api';
-import { Card } from '../components/ui/Card';
-import { Button } from '../components/ui/Button';
 
 const Reports = () => {
   const [activeTab, setActiveTab] = useState('daily');
@@ -96,147 +94,163 @@ const Reports = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Business Reports</h1>
-          <p className="text-gray-600">Detailed sales and transaction reports</p>
+    <div className="p-6 space-y-6">
+      {/* Header */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold text-gray-900">Business Reports</h1>
+            <p className="text-gray-600 mt-1">Detailed sales and transaction reports</p>
+          </div>
+          <button 
+            onClick={exportCSV}
+            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <DocumentArrowDownIcon className="h-4 w-4 mr-2" />
+            Export CSV
+          </button>
         </div>
-        <Button onClick={exportCSV} className="flex items-center space-x-2">
-          <DocumentArrowDownIcon className="h-4 w-4" />
-          <span>Export CSV</span>
-        </Button>
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8">
-          {[
-            { id: 'daily', name: 'Daily Report' },
-            { id: 'monthly', name: 'Monthly Report' },
-            { id: 'yearly', name: 'Yearly Report' }
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                activeTab === tab.id
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              {tab.name}
-            </button>
-          ))}
-        </nav>
-      </div>
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+        <div className="border-b border-gray-200">
+          <nav className="flex space-x-8 px-6">
+            {[
+              { id: 'daily', name: 'Daily Report' },
+              { id: 'monthly', name: 'Monthly Report' },
+              { id: 'yearly', name: 'Yearly Report' }
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === tab.id
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                {tab.name}
+              </button>
+            ))}
+          </nav>
+        </div>
 
-      {/* Date/Period Selectors */}
-      <div className="flex items-center space-x-4">
-        {activeTab === 'daily' && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
-            <input
-              type="date"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+        {/* Date/Period Selectors */}
+        <div className="p-6 border-b border-gray-200">
+          <div className="flex items-center space-x-4">
+            {activeTab === 'daily' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            )}
+            
+            {activeTab === 'monthly' && (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Month</label>
+                  <select
+                    value={selectedMonth}
+                    onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+                    className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    {Array.from({ length: 12 }, (_, i) => (
+                      <option key={i + 1} value={i + 1}>
+                        {new Date(2024, i, 1).toLocaleString('default', { month: 'long' })}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Year</label>
+                  <select
+                    value={selectedYear}
+                    onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                    className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    {Array.from({ length: 5 }, (_, i) => (
+                      <option key={2024 - i} value={2024 - i}>
+                        {2024 - i}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </>
+            )}
+            
+            {activeTab === 'yearly' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Year</label>
+                <select
+                  value={selectedYear}
+                  onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                  className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  {Array.from({ length: 5 }, (_, i) => (
+                    <option key={2024 - i} value={2024 - i}>
+                      {2024 - i}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
-        )}
-        
-        {activeTab === 'monthly' && (
-          <>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Month</label>
-              <select
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {Array.from({ length: 12 }, (_, i) => (
-                  <option key={i + 1} value={i + 1}>
-                    {new Date(2024, i, 1).toLocaleString('default', { month: 'long' })}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Year</label>
-              <select
-                value={selectedYear}
-                onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {Array.from({ length: 5 }, (_, i) => (
-                  <option key={2024 - i} value={2024 - i}>
-                    {2024 - i}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </>
-        )}
-        
-        {activeTab === 'yearly' && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Year</label>
-            <select
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              {Array.from({ length: 5 }, (_, i) => (
-                <option key={2024 - i} value={2024 - i}>
-                  {2024 - i}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
+        </div>
       </div>
 
       {/* Report Content */}
       {reportData && (
         <div className="space-y-6">
           {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
               <div className="flex items-center">
-                <ChartBarIcon className="h-8 w-8 text-green-600" />
-                <div className="ml-3">
+                <div className="p-3 bg-green-100 rounded-lg">
+                  <ChartBarIcon className="h-6 w-6 text-green-600" />
+                </div>
+                <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">Total Sales</p>
                   <p className="text-2xl font-semibold text-gray-900">
                     {formatCurrency(reportData.total_sales)}
                   </p>
                 </div>
               </div>
-            </Card>
+            </div>
             
-            <Card className="p-6">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
               <div className="flex items-center">
-                <CalendarIcon className="h-8 w-8 text-blue-600" />
-                <div className="ml-3">
+                <div className="p-3 bg-blue-100 rounded-lg">
+                  <CalendarIcon className="h-6 w-6 text-blue-600" />
+                </div>
+                <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">Transactions</p>
                   <p className="text-2xl font-semibold text-gray-900">
                     {reportData.total_transactions}
                   </p>
                 </div>
               </div>
-            </Card>
+            </div>
             
             {reportData.items_sold && (
-              <Card className="p-6">
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                 <div className="flex items-center">
-                  <DocumentArrowDownIcon className="h-8 w-8 text-purple-600" />
-                  <div className="ml-3">
+                  <div className="p-3 bg-purple-100 rounded-lg">
+                    <DocumentArrowDownIcon className="h-6 w-6 text-purple-600" />
+                  </div>
+                  <div className="ml-4">
                     <p className="text-sm font-medium text-gray-600">Items Sold</p>
                     <p className="text-2xl font-semibold text-gray-900">
                       {reportData.items_sold}
                     </p>
                   </div>
                 </div>
-              </Card>
+              </div>
             )}
           </div>
 
@@ -244,7 +258,7 @@ const Reports = () => {
           {activeTab === 'daily' && reportData.sales_list && (
             <div className="space-y-4">
               {reportData.sales_list.map((sale) => (
-                <Card key={sale.id} className="p-6">
+                <div key={sale.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                   <div className="flex items-center justify-between mb-4">
                     <div>
                       <h3 className="text-lg font-semibold text-gray-900">Sale #{sale.id}</h3>
@@ -261,7 +275,7 @@ const Reports = () => {
                       <h4 className="text-sm font-medium text-gray-900 mb-2">Items Sold:</h4>
                       <div className="space-y-2">
                         {sale.items_detail.map((item, index) => (
-                          <div key={index} className="flex justify-between items-center bg-gray-50 p-2 rounded">
+                          <div key={index} className="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
                             <div>
                               <span className="font-medium">{item.product}</span>
                               <span className="text-gray-600 ml-2">x{item.quantity}</span>
@@ -275,15 +289,17 @@ const Reports = () => {
                       </div>
                     </div>
                   )}
-                </Card>
+                </div>
               ))}
             </div>
           )}
 
           {/* Monthly Report Breakdown */}
           {activeTab === 'monthly' && reportData.daily_breakdown && (
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Daily Breakdown</h3>
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+              <div className="p-6 border-b border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900">Daily Breakdown</h3>
+              </div>
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
@@ -295,7 +311,7 @@ const Reports = () => {
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {reportData.daily_breakdown.map((day) => (
-                      <tr key={day.date}>
+                      <tr key={day.date} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           {new Date(day.date).toLocaleDateString()}
                         </td>
@@ -308,13 +324,15 @@ const Reports = () => {
                   </tbody>
                 </table>
               </div>
-            </Card>
+            </div>
           )}
 
           {/* Yearly Report Breakdown */}
           {activeTab === 'yearly' && reportData.monthly_breakdown && (
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Monthly Breakdown</h3>
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+              <div className="p-6 border-b border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900">Monthly Breakdown</h3>
+              </div>
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
@@ -326,7 +344,7 @@ const Reports = () => {
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {reportData.monthly_breakdown.map((month) => (
-                      <tr key={month.month}>
+                      <tr key={month.month} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{month.month_name}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{month.transactions}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
@@ -337,7 +355,7 @@ const Reports = () => {
                   </tbody>
                 </table>
               </div>
-            </Card>
+            </div>
           )}
         </div>
       )}

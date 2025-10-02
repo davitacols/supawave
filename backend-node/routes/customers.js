@@ -16,12 +16,12 @@ router.get('/', authenticateToken, async (req, res) => {
               COUNT(s.id) as total_orders,
               COALESCE(SUM(s.total_amount), 0) as total_spent,
               MAX(s.created_at) as last_order_date
-       FROM customers c
-       LEFT JOIN sales_sale s ON c.phone = s.customer_phone
-       WHERE c.user_id = $1::uuid
+       FROM customers_customer c
+       LEFT JOIN sales_sale s ON c.id = s.customer_id
+       WHERE c.business_id = $1::bigint
        GROUP BY c.id
        ORDER BY c.created_at DESC`,
-      [req.user.id]
+      [req.user.business_id]
     );
     
     res.json(result.rows);
@@ -53,13 +53,13 @@ router.get('/credit', authenticateToken, async (req, res) => {
 // Create customer
 router.post('/', authenticateToken, async (req, res) => {
   try {
-    const { name, email, phone_number, address, credit_limit } = req.body;
+    const { name, email, phone, address } = req.body;
     
     const result = await pool.query(
-      `INSERT INTO customers (name, email, phone, address, user_id, created_at)
-       VALUES ($1, $2, $3, $4, $5::uuid, NOW())
+      `INSERT INTO customers_customer (name, email, phone, address, business_id, created_at)
+       VALUES ($1, $2, $3, $4, $5::bigint, NOW())
        RETURNING *`,
-      [name, email, phone_number, address, req.user.id]
+      [name, email || null, phone, address || null, req.user.business_id]
     );
     
     res.status(201).json(result.rows[0]);
@@ -73,14 +73,14 @@ router.post('/', authenticateToken, async (req, res) => {
 router.put('/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, email, phone_number, address, credit_limit } = req.body;
+    const { name, email, phone, address } = req.body;
     
     const result = await pool.query(
-      `UPDATE customers 
-       SET name = $1, email = $2, phone = $3, address = $4
-       WHERE id = $5::uuid AND user_id = $6::uuid
+      `UPDATE customers_customer 
+       SET name = $1, email = $2, phone = $3, address = $4, updated_at = NOW()
+       WHERE id = $5::uuid AND business_id = $6::bigint
        RETURNING *`,
-      [name, email, phone_number, address, id, req.user.id]
+      [name, email || null, phone, address || null, id, req.user.business_id]
     );
     
     if (result.rows.length === 0) {
@@ -100,8 +100,8 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     const { id } = req.params;
     
     const result = await pool.query(
-      'DELETE FROM customers WHERE id = $1::uuid AND user_id = $2::uuid RETURNING id',
-      [id, req.user.id]
+      'DELETE FROM customers_customer WHERE id = $1::uuid AND business_id = $2::bigint RETURNING id',
+      [id, req.user.business_id]
     );
     
     if (result.rows.length === 0) {

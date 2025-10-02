@@ -49,7 +49,7 @@ app.use('/api/customers', require('./routes/customers'));
 app.use('/api/credit', require('./routes/credit'));
 app.use('/api/analytics', require('./routes/analytics'));
 app.use('/api/reports', require('./routes/reports'));
-app.use('/api/notifications', require('./routes/notifications'));
+app.use('/api/notifications', require('./routes/notifications').router);
 app.use('/api/staff', require('./routes/staff'));
 app.use('/api/stores', require('./routes/stores'));
 app.use('/api/invoices', require('./routes/invoices'));
@@ -57,6 +57,60 @@ app.use('/api/transfers', require('./routes/transfers'));
 app.use('/api/marketplace', require('./routes/marketplace'));
 app.use('/api/dashboard', require('./routes/dashboard'));
 app.use('/api/ai', require('./routes/ai'));
+app.use('/api/forecasting', require('./routes/forecasting'));
+app.use('/api/finance', require('./routes/finance'));
+
+// Test forecasting endpoint
+app.get('/api/test-forecasting', (req, res) => {
+  res.json({ 
+    message: 'Forecasting routes loaded successfully',
+    timestamp: new Date().toISOString(),
+    available_routes: [
+      '/api/forecasting/dashboard',
+      '/api/forecasting/recommendations',
+      '/api/forecasting/products/:id/forecast',
+      '/api/forecasting/products/:id/trends'
+    ]
+  });
+});
+
+// Debug endpoint to check business data
+app.get('/api/debug-business', require('./middleware/auth').authenticateToken, async (req, res) => {
+  try {
+    const { Pool } = require('pg');
+    const pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false }
+    });
+    
+    const products = await pool.query(`
+      SELECT id, name, stock_quantity, low_stock_threshold, reorder_point
+      FROM inventory_product 
+      WHERE business_id = $1 AND is_active = true
+      ORDER BY stock_quantity ASC
+      LIMIT 10
+    `, [req.user.business_id]);
+    
+    const lowStockProducts = products.rows.filter(p => 
+      parseInt(p.stock_quantity) <= parseInt(p.reorder_point)
+    );
+    
+    res.json({
+      business_id: req.user.business_id,
+      total_products: products.rows.length,
+      low_stock_products: lowStockProducts.length,
+      products: products.rows.map(p => ({
+        name: p.name,
+        stock: parseInt(p.stock_quantity),
+        threshold: parseInt(p.low_stock_threshold),
+        reorder_point: parseInt(p.reorder_point),
+        needs_reorder: parseInt(p.stock_quantity) <= parseInt(p.reorder_point)
+      }))
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
 // Health check
 app.get('/', (req, res) => {

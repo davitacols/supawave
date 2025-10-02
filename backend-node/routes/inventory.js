@@ -4,6 +4,7 @@ const { v4: uuidv4 } = require('uuid');
 const multer = require('multer');
 const { authenticateToken } = require('../middleware/auth');
 const { validateProduct } = require('../middleware/validation');
+const NotificationService = require('../utils/notificationService');
 const router = express.Router();
 
 const upload = multer({ dest: 'uploads/' });
@@ -16,23 +17,23 @@ const pool = new Pool({
 // Get all products
 router.get('/products', authenticateToken, async (req, res) => {
   try {
-    const { search, category, low_stock, page = 1, limit = 1000 } = req.query;
-    const offset = (page - 1) * limit;
+    const { search, category, low_stock, page = 1, limit = 50 } = req.query;
+    const offset = (parseInt(page) - 1) * parseInt(limit);
     
     let query = `
       SELECT *,
              CASE WHEN stock_quantity <= low_stock_threshold THEN true ELSE false END as is_low_stock
       FROM inventory_product
-      WHERE business_id = $1::bigint
+      WHERE business_id = $1 AND is_active = true
     `;
     const params = [req.user.business_id];
     
     if (search) {
-      query += ` AND (name ILIKE $${params.length + 1} OR barcode ILIKE $${params.length + 1})`;
+      query += ` AND (name ILIKE $${params.length + 1} OR barcode ILIKE $${params.length + 1} OR sku ILIKE $${params.length + 1})`;
       params.push(`%${search}%`);
     }
     
-    if (category) {
+    if (category && category !== 'all') {
       query += ` AND category_id = $${params.length + 1}`;
       params.push(category);
     }
@@ -41,40 +42,31 @@ router.get('/products', authenticateToken, async (req, res) => {
       query += ` AND stock_quantity <= low_stock_threshold`;
     }
     
+    // Get total count first
+    let countQuery = query.replace('SELECT *,\n             CASE WHEN stock_quantity <= low_stock_threshold THEN true ELSE false END as is_low_stock\n      FROM', 'SELECT COUNT(*) as total FROM');
+    const countResult = await pool.query(countQuery, params);
+    const total = parseInt(countResult.rows[0].total);
+    
+    // Add pagination to main query
     query += ` ORDER BY name LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
-    params.push(parseInt(limit), parseInt(offset));
+    params.push(parseInt(limit), offset);
     
     console.log('🔍 Executing query:', query);
     console.log('🔍 With params:', params);
+    console.log('📊 Total products:', total);
     
     const result = await pool.query(query, params);
     
-    // Get total count for pagination
-    let countQuery = `SELECT COUNT(*) as total FROM inventory_product WHERE business_id = $1::bigint`;
-    const countParams = [req.user.business_id];
-    
-    if (search) {
-      countQuery += ` AND (name ILIKE $2 OR barcode ILIKE $2)`;
-      countParams.push(`%${search}%`);
-    }
-    
-    const countResult = await pool.query(countQuery, countParams);
-    const total = parseInt(countResult.rows[0].total);
-    
-    // For POS compatibility, return just the array if no pagination params
-    if (req.query.page || req.query.limit) {
-      res.json({
-        products: result.rows,
-        pagination: {
-          page: parseInt(page),
-          limit: parseInt(limit),
-          total,
-          pages: Math.ceil(total / limit)
-        }
-      });
-    } else {
-      res.json(result.rows);
-    }
+    // Always return paginated format
+    res.json({
+      products: result.rows,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        pages: Math.ceil(total / parseInt(limit))
+      }
+    });
   } catch (error) {
     console.error('Get products error:', error);
     res.status(500).json({ error: 'Failed to fetch products' });
@@ -120,6 +112,14 @@ router.post('/products', authenticateToken, upload.single('image'), async (req, 
        category || null, supplier || null]
     );
     
+    // Create notification for new product
+    await NotificationService.createInventoryNotification(
+      req.user.business_id,
+      'added',
+      name,
+      stock_quantity
+    );
+    
     res.status(201).json(result.rows[0]);
   } catch (error) {
     console.error('Create product error:', error);
@@ -137,6 +137,12 @@ router.put('/products/:id', authenticateToken, async (req, res) => {
     const { id } = req.params;
     const { name, description, price, cost_price, quantity, reorder_level, category_id, barcode, sku } = req.body;
     
+    // Get current product data for comparison
+    const currentProduct = await pool.query(
+      'SELECT name, stock_quantity FROM inventory_product WHERE id = $1::uuid AND business_id = $2::bigint',
+      [id, req.user.business_id]
+    );
+    
     const result = await pool.query(
       `UPDATE inventory_product 
        SET name = $1, cost_price = $2, selling_price = $3, stock_quantity = $4, 
@@ -148,6 +154,31 @@ router.put('/products/:id', authenticateToken, async (req, res) => {
     
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Product not found' });
+    }
+    
+    // Check if stock quantity changed and create notification
+    if (currentProduct.rows.length > 0) {
+      const oldQuantity = currentProduct.rows[0].stock_quantity;
+      if (oldQuantity !== quantity) {
+        const action = quantity > oldQuantity ? 'increased' : 'decreased';
+        const difference = Math.abs(quantity - oldQuantity);
+        await NotificationService.createInventoryNotification(
+          req.user.business_id,
+          `${action} by ${difference}`,
+          name,
+          quantity
+        );
+      }
+      
+      // Check for low stock
+      if (quantity <= reorder_level) {
+        await NotificationService.createLowStockNotification(
+          req.user.business_id,
+          name,
+          quantity,
+          reorder_level
+        );
+      }
     }
     
     res.json(result.rows[0]);
@@ -184,8 +215,8 @@ router.get('/products/low-stock', authenticateToken, async (req, res) => {
     const result = await pool.query(
       `SELECT id, name, sku, barcode, stock_quantity, low_stock_threshold, selling_price
        FROM inventory_product
-       WHERE business_id = $1::bigint AND stock_quantity <= low_stock_threshold
-       ORDER BY name`,
+       WHERE business_id = $1 AND stock_quantity <= low_stock_threshold AND is_active = true
+       ORDER BY stock_quantity ASC, name`,
       [req.user.business_id]
     );
     
@@ -244,25 +275,38 @@ router.get('/suppliers', authenticateToken, async (req, res) => {
   }
 });
 
-// Smart reorder suggestions
+// Smart reorder suggestions with ML forecasting
 router.get('/smart-reorder', authenticateToken, async (req, res) => {
   try {
-    const result = await pool.query(
-      `SELECT id, name, sku, stock_quantity, low_stock_threshold, reorder_point,
-              (reorder_point - stock_quantity) as suggested_quantity,
-              selling_price, cost_price
-       FROM inventory_product
-       WHERE business_id = $1::bigint 
-       AND stock_quantity <= reorder_point
-       AND is_active = true
-       ORDER BY (reorder_point - stock_quantity) DESC`,
-      [req.user.business_id]
-    );
+    const demandForecaster = require('../utils/demandForecasting');
+    const recommendations = await demandForecaster.generateReorderRecommendations(req.user.business_id);
     
-    res.json(result.rows);
+    res.json({
+      recommendations,
+      generated_at: new Date().toISOString(),
+      ai_powered: true
+    });
   } catch (error) {
     console.error('Smart reorder error:', error);
-    res.status(500).json({ error: 'Failed to fetch reorder suggestions' });
+    
+    // Fallback to basic reorder logic
+    try {
+      const result = await pool.query(
+        `SELECT id, name, sku, stock_quantity, low_stock_threshold, reorder_point,
+                (reorder_point - stock_quantity) as suggested_quantity,
+                selling_price, cost_price
+         FROM inventory_product
+         WHERE business_id = $1::bigint 
+         AND stock_quantity <= reorder_point
+         AND is_active = true
+         ORDER BY (reorder_point - stock_quantity) DESC`,
+        [req.user.business_id]
+      );
+      
+      res.json({ recommendations: result.rows, ai_powered: false });
+    } catch (fallbackError) {
+      res.status(500).json({ error: 'Failed to fetch reorder suggestions' });
+    }
   }
 });
 
@@ -356,9 +400,12 @@ router.post('/stock-takes', authenticateToken, async (req, res) => {
   }
 });
 
-// Get inventory alerts
+// Get inventory alerts with forecasting insights
 router.get('/alerts', authenticateToken, async (req, res) => {
   try {
+    const demandForecaster = require('../utils/demandForecasting');
+    
+    // Get traditional alerts
     const result = await pool.query(
       `SELECT p.id, p.name as product_name, p.stock_quantity as current_stock,
               p.low_stock_threshold, p.reorder_point,
@@ -389,7 +436,28 @@ router.get('/alerts', authenticateToken, async (req, res) => {
       [req.user.business_id]
     );
     
-    res.json(result.rows);
+    // Enhance alerts with forecasting data
+    const enhancedAlerts = [];
+    for (const alert of result.rows) {
+      try {
+        const forecast = await demandForecaster.forecastDemand(req.user.business_id, alert.id, 7);
+        const totalDemand = forecast.forecast.reduce((sum, f) => sum + f.predicted_demand, 0);
+        const avgDailyDemand = totalDemand / 7;
+        const daysUntilStockout = alert.current_stock / Math.max(avgDailyDemand, 0.1);
+        
+        enhancedAlerts.push({
+          ...alert,
+          predicted_daily_demand: Math.round(avgDailyDemand * 100) / 100,
+          days_until_stockout: Math.round(daysUntilStockout * 10) / 10,
+          forecast_confidence: forecast.confidence,
+          ai_enhanced: true
+        });
+      } catch (error) {
+        enhancedAlerts.push({ ...alert, ai_enhanced: false });
+      }
+    }
+    
+    res.json(enhancedAlerts);
   } catch (error) {
     console.error('Get alerts error:', error);
     res.status(500).json({ error: 'Failed to fetch alerts' });

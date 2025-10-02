@@ -2,6 +2,7 @@ const express = require('express');
 const { Pool } = require('pg');
 const { authenticateToken } = require('../middleware/auth');
 const { validateSale } = require('../middleware/validation');
+const NotificationService = require('../utils/notificationService');
 const router = express.Router();
 
 const pool = new Pool({
@@ -35,14 +36,30 @@ router.post('/', authenticateToken, validateSale, async (req, res) => {
   try {
     await client.query('BEGIN');
     
-    const { items, customer_phone, total_amount } = req.body;
+    const { 
+      items, 
+      customer_phone, 
+      customer_email, 
+      customer_id, 
+      total_amount, 
+      subtotal, 
+      tax_amount = 0, 
+      discount = 0, 
+      payment_method = 'cash', 
+      payment_reference, 
+      notes 
+    } = req.body;
     
     // Create sale
     const saleResult = await client.query(
-      `INSERT INTO sales_sale (business_id, customer_phone, total_amount, created_at)
-       VALUES ($1::bigint, $2, $3, NOW())
+      `INSERT INTO sales_sale (business_id, customer_phone, customer_email, customer_id, 
+                               total_amount, subtotal, tax_amount, discount, payment_method, 
+                               payment_reference, notes, created_at)
+       VALUES ($1::bigint, $2, $3, $4::uuid, $5, $6, $7, $8, $9, $10, $11, NOW())
        RETURNING *`,
-      [req.user.business_id, customer_phone || null, parseFloat(total_amount)]
+      [req.user.business_id, customer_phone || null, customer_email || null, customer_id || null,
+       parseFloat(total_amount), parseFloat(subtotal || total_amount), parseFloat(tax_amount), 
+       parseFloat(discount), payment_method, payment_reference || null, notes || null]
     );
     
     const sale = saleResult.rows[0];
@@ -50,6 +67,12 @@ router.post('/', authenticateToken, validateSale, async (req, res) => {
     // Create sale items and update inventory
     for (const item of items) {
       const productId = item.product_id || item.product;
+      
+      // Get product details for notifications
+      const productResult = await client.query(
+        'SELECT name, stock_quantity, low_stock_threshold FROM inventory_product WHERE id = $1::uuid AND business_id = $2::bigint',
+        [productId, req.user.business_id]
+      );
       
       // Create sale item
       await client.query(
@@ -63,7 +86,29 @@ router.post('/', authenticateToken, validateSale, async (req, res) => {
         'UPDATE inventory_product SET stock_quantity = stock_quantity - $1 WHERE id = $2::uuid AND business_id = $3::bigint',
         [item.quantity, productId, req.user.business_id]
       );
+      
+      // Check for low stock after sale
+      if (productResult.rows.length > 0) {
+        const product = productResult.rows[0];
+        const newQuantity = product.stock_quantity - item.quantity;
+        
+        if (newQuantity <= product.low_stock_threshold) {
+          await NotificationService.createLowStockNotification(
+            req.user.business_id,
+            product.name,
+            newQuantity,
+            product.low_stock_threshold
+          );
+        }
+      }
     }
+    
+    // Create sale notification
+    await NotificationService.createSaleNotification(
+      req.user.business_id,
+      parseFloat(total_amount),
+      customer_phone
+    );
     
     await client.query('COMMIT');
     res.status(201).json(sale);
