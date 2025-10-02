@@ -59,6 +59,21 @@ router.get('/stats', authenticateToken, async (req, res) => {
     console.log('📊 Dashboard request for business:', businessId);
     console.log('📊 User object:', req.user);
     
+    // Return zeros if no business_id
+    if (!businessId) {
+      console.log('📊 No business_id found, returning zeros');
+      return res.json({
+        todayStats: { sales: 0, revenue: 0, customers: 0, orders: 0 },
+        weeklyStats: { sales: 0, revenue: 0, customers: 0, orders: 0 },
+        monthlyStats: { sales: 0, revenue: 0, customers: 0, orders: 0 },
+        inventory: { totalProducts: 0, lowStock: 0, outOfStock: 0, categories: 0 },
+        recentSales: [],
+        topProducts: [],
+        salesTrend: [],
+        alerts: [{ type: 'info', message: 'No business data found', timestamp: new Date().toISOString() }]
+      });
+    }
+    
     // Test query to verify business ID
     const testQuery = await pool.query('SELECT COUNT(*) as count FROM sales_sale WHERE business_id = $1::bigint', [businessId]);
     console.log('📊 Sales count for this business:', testQuery.rows[0].count);

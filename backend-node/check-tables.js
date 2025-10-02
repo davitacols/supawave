@@ -7,36 +7,49 @@ const pool = new Pool({
 });
 
 async function checkTables() {
+  const client = await pool.connect();
+  
   try {
-    console.log('🔍 Checking available tables...');
+    console.log('Checking database tables...');
     
-    const tables = await pool.query(`
+    // Check what tables exist
+    const tablesResult = await client.query(`
       SELECT table_name 
       FROM information_schema.tables 
-      WHERE table_schema = 'public' 
+      WHERE table_schema = 'public'
       ORDER BY table_name
     `);
     
-    console.log('📋 Available tables:');
-    tables.rows.forEach(row => {
-      console.log(`  - ${row.table_name}`);
+    console.log('Existing tables:');
+    tablesResult.rows.forEach(row => {
+      console.log(`- ${row.table_name}`);
     });
     
-    // Check user data
-    const userId = '1104518454268002305';
+    // Check if main tables exist and create them if not
+    const requiredTables = [
+      'accounts_user',
+      'accounts_business', 
+      'inventory_product',
+      'inventory_category',
+      'sales_sale',
+      'sales_saleitem',
+      'stores',
+      'inventory_transfers',
+      'transfer_items',
+      'store_inventory'
+    ];
     
-    // Check products
-    const products = await pool.query('SELECT COUNT(*) as count FROM products WHERE user_id = $1', [userId]);
-    console.log(`\n📦 Products for user: ${products.rows[0].count}`);
-    
-    // Check sales
-    const sales = await pool.query('SELECT COUNT(*) as count, COALESCE(SUM(total), 0) as revenue FROM sales WHERE user_id = $1', [userId]);
-    console.log(`💰 Sales for user: ${sales.rows[0].count} transactions, ₦${sales.rows[0].revenue} revenue`);
+    console.log('\nChecking required tables...');
+    for (const table of requiredTables) {
+      const exists = tablesResult.rows.some(row => row.table_name === table);
+      console.log(`${table}: ${exists ? '✅' : '❌'}`);
+    }
     
   } catch (error) {
-    console.error('❌ Check failed:', error);
+    console.error('Error checking tables:', error);
   } finally {
-    await pool.end();
+    client.release();
+    process.exit();
   }
 }
 
