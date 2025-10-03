@@ -72,4 +72,26 @@ app.get('/api/inventory/products/low-stock', (req, res) => {
   res.json([]);
 });
 
+// Auth endpoints
+app.post('/api/auth/login', (req, res) => {
+  const { email, password } = req.body;
+  res.json({
+    user: {
+      id: 1,
+      email: email || 'test@supawave.com',
+      first_name: 'Test',
+      role: 'owner',
+      business_id: 1
+    },
+    tokens: {
+      access: 'fake-jwt-token',
+      refresh: 'fake-refresh-token'
+    }
+  });
+});
+
+app.post('/api/auth/logout', (req, res) => {
+  res.json({ message: 'Logged out successfully' });
+});
+
 module.exports = app;
