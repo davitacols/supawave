@@ -3,9 +3,18 @@ const { Pool } = require('pg');
 const { authenticateToken } = require('../middleware/auth');
 const router = express.Router();
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }
+// Only create pool if DATABASE_URL exists
+let pool = null;
+if (process.env.DATABASE_URL) {
+  pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false }
+  });
+}
+
+// Test endpoint to verify route is loaded
+router.get('/test', (req, res) => {
+  res.json({ message: 'Dashboard route loaded successfully', timestamp: new Date().toISOString() });
 });
 
 // Public dashboard stats for testing
@@ -58,6 +67,21 @@ router.get('/stats', authenticateToken, async (req, res) => {
     const businessId = req.user.business_id;
     console.log('📊 Dashboard request for business:', businessId);
     console.log('📊 User object:', req.user);
+    
+    // Return sample data if no database connection
+    if (!pool || !process.env.DATABASE_URL) {
+      console.log('📊 No database connection, returning sample data');
+      return res.json({
+        todayStats: { sales: 2, revenue: 45000, customers: 3, orders: 2 },
+        weeklyStats: { sales: 15, revenue: 320000, customers: 18, orders: 15 },
+        monthlyStats: { sales: 67, revenue: 1250000, customers: 89, orders: 67 },
+        inventory: { totalProducts: 156, lowStock: 8, outOfStock: 2, categories: 12 },
+        recentSales: [],
+        topProducts: [],
+        salesTrend: [],
+        alerts: [{ type: 'info', message: 'Sample dashboard data (no database)', timestamp: new Date().toISOString() }]
+      });
+    }
     
     // Return zeros if no business_id
     if (!businessId) {
