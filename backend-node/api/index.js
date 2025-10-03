@@ -31,28 +31,32 @@ app.get('/api', (req, res) => {
   });
 });
 
-// Routes
-try {
-  app.use('/api/auth', require('../routes/auth'));
-  app.use('/api/inventory', require('../routes/inventory'));
-  app.use('/api/sales', require('../routes/sales'));
-  app.use('/api/customers', require('../routes/customers'));
-  app.use('/api/credit', require('../routes/credit'));
-  app.use('/api/analytics', require('../routes/analytics'));
-  app.use('/api/reports', require('../routes/reports'));
-  app.use('/api/notifications', require('../routes/notifications').router);
-  app.use('/api/staff', require('../routes/staff'));
-  app.use('/api/stores', require('../routes/stores'));
-  app.use('/api/invoices', require('../routes/invoices'));
-  app.use('/api/transfers', require('../routes/transfers'));
-  app.use('/api/marketplace', require('../routes/marketplace'));
-  app.use('/api/dashboard', require('../routes/dashboard'));
-  app.use('/api/ai', require('../routes/ai'));
-  app.use('/api/forecasting', require('../routes/forecasting'));
-  app.use('/api/finance', require('../routes/finance'));
-} catch (error) {
-  console.error('Route loading error:', error);
-}
+// Routes with individual error handling
+const routes = [
+  ['/api/auth', '../routes/auth'],
+  ['/api/dashboard', '../routes/dashboard'],
+  ['/api/inventory', '../routes/inventory'],
+  ['/api/sales', '../routes/sales'],
+  ['/api/customers', '../routes/customers'],
+  ['/api/stores', '../routes/stores'],
+  ['/api/transfers', '../routes/transfers'],
+  ['/api/forecasting', '../routes/forecasting'],
+  ['/api/notifications', '../routes/notifications', 'router']
+];
+
+routes.forEach(([path, routePath, exportName]) => {
+  try {
+    const route = require(routePath);
+    app.use(path, exportName ? route[exportName] : route);
+    console.log(`✅ Loaded route: ${path}`);
+  } catch (error) {
+    console.error(`❌ Failed to load route ${path}:`, error.message);
+    // Create fallback route
+    app.use(path, (req, res) => {
+      res.status(503).json({ error: `Route ${path} temporarily unavailable` });
+    });
+  }
+});
 
 // Error handling
 app.use((err, req, res, next) => {
