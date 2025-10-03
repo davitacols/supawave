@@ -123,6 +123,68 @@ app.get('/api/forecasting/dashboard', authenticateToken, async (req, res) => {
   }
 });
 
+// Auth login
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const result = await pool.query('SELECT * FROM accounts_user WHERE email = $1', [email]);
+    
+    if (result.rows.length === 0) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+    
+    const user = result.rows[0];
+    const token = 'fake-jwt-token';
+    
+    res.json({
+      user: {
+        id: user.id,
+        email: user.email,
+        first_name: user.first_name,
+        role: 'owner',
+        business_id: user.id
+      },
+      tokens: {
+        access: token,
+        refresh: token
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Login failed' });
+  }
+});
+
+// Auth register
+app.post('/api/auth/register', async (req, res) => {
+  try {
+    const { email, password, first_name, last_name, business_name } = req.body;
+    
+    const result = await pool.query(
+      'INSERT INTO accounts_user (email, password, first_name, last_name) VALUES ($1, $2, $3, $4) RETURNING *',
+      [email, password, first_name, last_name]
+    );
+    
+    const user = result.rows[0];
+    const token = 'fake-jwt-token';
+    
+    res.status(201).json({
+      user: {
+        id: user.id,
+        email: user.email,
+        first_name: user.first_name,
+        role: 'owner',
+        business_id: user.id
+      },
+      tokens: {
+        access: token,
+        refresh: token
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Registration failed' });
+  }
+});
+
 // Auth business
 app.get('/api/auth/business', authenticateToken, async (req, res) => {
   try {
