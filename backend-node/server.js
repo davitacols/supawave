@@ -31,8 +31,12 @@ app.use((req, res, next) => {
   next();
 });
 
-// Routes (temporarily disable auth rate limiting for testing)
-app.use('/api/auth', require('./routes/auth'));
+// Routes with error handling
+try {
+  app.use('/api/auth', require('./routes/auth'));
+} catch (error) {
+  console.log('Auth routes not loaded:', error.message);
+}
 
 // Simple debug endpoint
 app.get('/api/debug', (req, res) => {
@@ -52,22 +56,45 @@ app.get('/api/debug', (req, res) => {
     }
   });
 });
-app.use('/api/inventory', require('./routes/inventory'));
-app.use('/api/sales', require('./routes/sales'));
-app.use('/api/customers', require('./routes/customers'));
-app.use('/api/credit', require('./routes/credit'));
-app.use('/api/analytics', require('./routes/analytics'));
-app.use('/api/reports', require('./routes/reports'));
-app.use('/api/notifications', require('./routes/notifications').router);
-app.use('/api/staff', require('./routes/staff'));
-app.use('/api/stores', require('./routes/stores'));
-app.use('/api/invoices', require('./routes/invoices'));
-app.use('/api/transfers', require('./routes/transfers'));
-app.use('/api/marketplace', require('./routes/marketplace'));
-app.use('/api/dashboard', require('./routes/dashboard'));
-app.use('/api/ai', require('./routes/ai'));
-app.use('/api/forecasting', require('./routes/forecasting'));
-app.use('/api/finance', require('./routes/finance'));
+// Load routes with error handling
+const routes = [
+  { path: '/api/inventory', file: './routes/inventory' },
+  { path: '/api/sales', file: './routes/sales' },
+  { path: '/api/customers', file: './routes/customers' },
+  { path: '/api/credit', file: './routes/credit' },
+  { path: '/api/analytics', file: './routes/analytics' },
+  { path: '/api/reports', file: './routes/reports' },
+  { path: '/api/staff', file: './routes/staff' },
+  { path: '/api/stores', file: './routes/stores' },
+  { path: '/api/invoices', file: './routes/invoices' },
+  { path: '/api/transfers', file: './routes/transfers' },
+  { path: '/api/marketplace', file: './routes/marketplace' },
+  { path: '/api/dashboard', file: './routes/dashboard' },
+  { path: '/api/ai', file: './routes/ai' },
+  { path: '/api/forecasting', file: './routes/forecasting' },
+  { path: '/api/finance', file: './routes/finance' }
+];
+
+routes.forEach(route => {
+  try {
+    if (route.file === './routes/notifications') {
+      app.use(route.path, require(route.file).router);
+    } else {
+      app.use(route.path, require(route.file));
+    }
+    console.log(`✅ Loaded ${route.path}`);
+  } catch (error) {
+    console.log(`❌ Failed to load ${route.path}:`, error.message);
+  }
+});
+
+// Load notifications separately
+try {
+  app.use('/api/notifications', require('./routes/notifications').router);
+  console.log('✅ Loaded /api/notifications');
+} catch (error) {
+  console.log('❌ Failed to load /api/notifications:', error.message);
+}
 
 // Test forecasting endpoint
 app.get('/api/test-forecasting', (req, res) => {
