@@ -188,7 +188,13 @@ app.post('/api/auth/register', async (req, res) => {
 // Auth business
 app.get('/api/auth/business', authenticateToken, async (req, res) => {
   try {
-    res.json({ id: 1, name: 'Test Business', subscription_status: 'active' });
+    const result = await pool.query('SELECT * FROM accounts_business WHERE id = $1', [req.user.business_id]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Business not found' });
+    }
+    
+    res.json(result.rows[0]);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch business' });
   }
