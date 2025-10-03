@@ -69,7 +69,7 @@ const routes = [
   { path: '/api/invoices', file: './routes/invoices' },
   { path: '/api/transfers', file: './routes/transfers' },
   { path: '/api/marketplace', file: './routes/marketplace' },
-  { path: '/api/dashboard', file: './routes/dashboard' },
+  { path: '/api/dashboard', file: './routes/dashboard-simple' },
   { path: '/api/ai', file: './routes/ai' },
   { path: '/api/forecasting', file: './routes/forecasting' },
   { path: '/api/finance', file: './routes/finance' }
