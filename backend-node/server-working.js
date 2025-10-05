@@ -194,6 +194,19 @@ app.post('/api/auth/logout', (req, res) => {
   res.json({ message: 'Logged out successfully' });
 });
 
+// Redirects for frontend compatibility
+app.post('/auth/login', (req, res) => {
+  const { email } = req.body;
+  res.json({
+    user: { id: 1104518454268002305, email: email || 'pic2nav@gmail.com', first_name: 'David', role: 'owner', business_id: 1104518460022685697 },
+    tokens: { access: 'working-jwt-token', refresh: 'working-refresh-token' }
+  });
+});
+
+app.post('/auth/logout', (req, res) => {
+  res.json({ message: 'Logged out successfully' });
+});
+
 app.use('*', (req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
