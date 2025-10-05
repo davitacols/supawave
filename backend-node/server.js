@@ -265,6 +265,14 @@ app.use((err, req, res, next) => {
 app.post('/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
+    
+    // Create pool connection
+    const { Pool } = require('pg');
+    const pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false }
+    });
+    
     const result = await pool.query('SELECT * FROM accounts_user WHERE email = $1', [email]);
     
     if (result.rows.length === 0) {
@@ -288,6 +296,7 @@ app.post('/auth/login', async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('Login error:', error);
     res.status(500).json({ error: 'Login failed' });
   }
 });
@@ -308,6 +317,13 @@ app.get('/dashboard/stats', require('./middleware/auth').authenticateToken, asyn
         inventory: { totalProducts: 0, lowStock: 0, outOfStock: 0, categories: 0 }
       });
     }
+    
+    // Create pool connection
+    const { Pool } = require('pg');
+    const pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false }
+    });
     
     const today = new Date().toISOString().split('T')[0];
     const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
@@ -340,6 +356,7 @@ app.get('/dashboard/stats', require('./middleware/auth').authenticateToken, asyn
       inventory: { totalProducts: parseInt(inventoryResult.rows[0].total_products), lowStock: parseInt(inventoryResult.rows[0].low_stock), outOfStock: 0, categories: 0 }
     });
   } catch (error) {
+    console.error('Dashboard error:', error);
     res.json({
       todayStats: { sales: 0, revenue: 0, customers: 0, orders: 0 },
       weeklyStats: { sales: 0, revenue: 0, customers: 0, orders: 0 },
