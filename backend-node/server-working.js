@@ -108,6 +108,76 @@ app.get('/api/stores', authenticateToken, (req, res) => {
   res.json([]);
 });
 
+// Inventory endpoints
+app.get('/api/inventory/products', authenticateToken, async (req, res) => {
+  try {
+    if (!pool) {
+      return res.json({ products: [], pagination: { page: 1, limit: 50, total: 0, pages: 0 } });
+    }
+    
+    const { page = 1, limit = 50 } = req.query;
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+    
+    const result = await pool.query(
+      'SELECT * FROM inventory_product WHERE business_id = $1 AND is_active = true ORDER BY name LIMIT $2 OFFSET $3',
+      [req.user.business_id, parseInt(limit), offset]
+    );
+    
+    const countResult = await pool.query(
+      'SELECT COUNT(*) as total FROM inventory_product WHERE business_id = $1 AND is_active = true',
+      [req.user.business_id]
+    );
+    
+    const total = parseInt(countResult.rows[0].total);
+    
+    res.json({
+      products: result.rows,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        pages: Math.ceil(total / parseInt(limit))
+      }
+    });
+  } catch (error) {
+    res.json({ products: [], pagination: { page: 1, limit: 50, total: 0, pages: 0 } });
+  }
+});
+
+app.get('/api/inventory/categories', authenticateToken, async (req, res) => {
+  try {
+    if (!pool) {
+      return res.json([]);
+    }
+    
+    const result = await pool.query(
+      'SELECT * FROM inventory_category WHERE business_id = $1 ORDER BY name',
+      [req.user.business_id]
+    );
+    
+    res.json(result.rows);
+  } catch (error) {
+    res.json([]);
+  }
+});
+
+app.get('/api/inventory/suppliers', authenticateToken, async (req, res) => {
+  try {
+    if (!pool) {
+      return res.json([]);
+    }
+    
+    const result = await pool.query(
+      'SELECT * FROM inventory_supplier WHERE business_id = $1 ORDER BY name',
+      [req.user.business_id]
+    );
+    
+    res.json(result.rows);
+  } catch (error) {
+    res.json([]);
+  }
+});
+
 app.get('/api/auth/business', authenticateToken, (req, res) => {
   res.json({ id: req.user.business_id, name: 'SupaWave Business', status: 'active' });
 });
