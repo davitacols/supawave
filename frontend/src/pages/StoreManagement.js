@@ -28,7 +28,11 @@ const StoreManagement = () => {
   const fetchStores = async () => {
     try {
       const token = localStorage.getItem('access_token');
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8000/api'}/stores`, {
+      const apiUrl = process.env.NODE_ENV === 'production' 
+        ? 'https://supawave-backend.vercel.app/api' 
+        : 'http://localhost:8000/api';
+      
+      const response = await fetch(`${apiUrl}/stores`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
@@ -59,7 +63,7 @@ const StoreManagement = () => {
   const fetchTransfers = async () => {
     try {
       const token = localStorage.getItem('access_token');
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8000/api'}/stores/transfers`, {
+      const response = await fetch('http://localhost:8000/api/stores/transfers', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
@@ -94,7 +98,7 @@ const StoreManagement = () => {
     
     try {
       const token = localStorage.getItem('access_token');
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8000/api'}/stores`, {
+      const response = await fetch('http://localhost:8000/api/stores', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -308,7 +312,7 @@ const StoreCard = ({ store, onAssignManager }) => {
   const fetchAnalytics = async () => {
     try {
       const token = localStorage.getItem('access_token');
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8000/api'}/stores/${store.id}/analytics`, {
+      const response = await fetch(`http://localhost:8000/api/stores/${store.id}/analytics?t=${Date.now()}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();

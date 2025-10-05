@@ -23,7 +23,11 @@ export const StoreProvider = ({ children }) => {
       const token = localStorage.getItem('access_token');
       if (!token) return;
 
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8000/api'}/stores`, {
+      const apiUrl = process.env.NODE_ENV === 'production' 
+        ? 'https://supawave-backend.vercel.app/api' 
+        : 'http://localhost:8000/api';
+      
+      const response = await fetch(`${apiUrl}/stores`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
