@@ -29,7 +29,7 @@ const StoreManagement = () => {
     try {
       const token = localStorage.getItem('access_token');
       const apiUrl = process.env.NODE_ENV === 'production' 
-        ? 'https://supawave-backend.vercel.app/api' 
+        ? 'https://backend-node-h8eb3trsg-davitacols-projects.vercel.app/api' 
         : 'http://localhost:8000/api';
       
       const response = await fetch(`${apiUrl}/stores`, {
